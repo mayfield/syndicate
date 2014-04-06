@@ -47,10 +47,10 @@ for x in bakery.get('cake', type='cheese'):
     x.delete()
 
 # Updates.
-def = bakery.get('condiment', default=True)
+default = bakery.get('condiment', default=True)
 if 'pepper' not in def['items']:
-    def['items'].append('pepper')
-    def.save()
+    default['items'].append('pepper')
+    default.save()
 else:
     print("We already serve pepper by default")
 
