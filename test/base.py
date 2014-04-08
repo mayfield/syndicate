@@ -12,7 +12,7 @@ class BaseTest(unittest.TestCase):
 
     def test_service_construct(self):
         self.assertRaises(TypeError, syndicate.Service)
-        syndicate.Service(host='foo', urn='bar')
+        syndicate.Service(uri='foo', urn='bar')
 
     def test_json_serializer(self):
         input_ = {

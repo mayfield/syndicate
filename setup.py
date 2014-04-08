@@ -11,7 +11,10 @@ setup(
     license='LICENSE',
     long_description=open('README.md').read(),
     packages=['syndicate'],
-    install_requires=['requests'],
+    install_requires=[
+        'requests',
+        'python-dateutil'
+    ],
     test_suite='test',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

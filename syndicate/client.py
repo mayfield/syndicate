@@ -5,7 +5,7 @@ Blocking client for REST apis.
 from __future__ import print_function, division
 
 import requests
-from . import serialization
+from . import data
 
 
 class HeaderAuth(requests.auth.AuthBase):
@@ -37,23 +37,50 @@ class LoginAuth(requests.auth.AuthBase):
 class Service(object):
     """ A stateful connection to a service. """
 
-    def __init__(self, host=None, urn=None, auth=None, serializer='json'):
-        if not (host and urn):
-            raise TypeError("Required: host, urn")
+    def __init__(self, uri=None, urn=None, auth=None, serializer='json',
+                 data_getter=None, meta_getter=None, trailing_slash=True):
+        if not (uri and urn):
+            raise TypeError("Required: uri, urn")
+        self.uri = uri
+        self.urn = urn
+        self.trailing_slash = trailing_slash
+        self.url = '%s/%s' % (uri.strip('/'), urn.strip('/'))
+        self.data_getter = data_getter
+        self.meta_getter = meta_getter
         self.session = requests.Session()
         if hasattr(serializer, 'mime'):
             self.serializer = serializer
         else:
-            self.serializer = serialization.serializers[serializer]
+            self.serializer = data.serializers[serializer]
         self.session.headers['accept'] = self.serializer.mime
         self.session.auth = auth
 
+    def import_filter(self, root):
+        """ Flatten a response with meta and data keys into an single object
+        where the values in the meta dict are converted to attrs. """
+        data = self.data_getter(root)
+        if isinstance(data, dict):
+            data = data.DictResponse(data)
+        elif isinstance(root, list):
+            data = data.ListResponse(data)
+        else:
+            return data
+        meta = self.meta_getter(root)
+        for mkey, mval in meta:
+            setattr(data, mkey, mval)
+        return data
+
     def do(self, method, *path, **query):
-        raise NotImplementedError()
+        path = tuple(x.strip('/') for x in path)
+        if self.trailing_slash:
+            path += ('',)
+        d = self.session.request(method, '/'.join((self.url,) + path),
+                                 params=query)
+        d = self.serializer.decode(d.text)
+        return self.import_filter(d)
 
     def get(self, *path, **query):
-        path = (x.strip('/') for x in path)
-        return self.session.get('/'.join(self.url, *path), params=query)
+        return self.do('get', *path, **query)
 
     def get_pager(self, *path, **query):
         raise NotImplementedError()
