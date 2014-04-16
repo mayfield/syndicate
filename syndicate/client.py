@@ -1,11 +1,25 @@
 '''
-Client for REST apis.
+Client for REST APIs.
 '''
 
 from __future__ import print_function, division
 
+import json
 import requests
 from . import data
+
+
+class ServiceError(Exception):
+    pass
+
+
+class ResponseError(ServiceError):
+
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return '%s(%s)' % (type(self).__name__, self.response)
 
 
 class HeaderAuth(requests.auth.AuthBase):
@@ -22,16 +36,39 @@ class HeaderAuth(requests.auth.AuthBase):
 
 
 class LoginAuth(requests.auth.AuthBase):
-    """ Auth where you need to perform an arbitrary "login" to get a cookie. """
+    """ Auth where you need to perform an arbitrary "login" to get a cookie.
+    The expectation is that the args to this constructor can be used to
+    perform a request that generates the required cookie(s) for a valid
+    session. """
+
+    content_type = 'application/json'
 
     def __init__(self, *args, **kwargs):
+        headers = {
+            'content-type': self.content_type
+        }
+        if 'headers' in kwargs:
+            headers.update(kwargs['headers'])
+        kwargs['headers'] = headers
+        if 'data' in kwargs:
+            kwargs['data'] = self.serializer(kwargs['data'])
         self.req_args = args
         self.req_kwargs = kwargs
+        self.tried = False
 
     def __call__(self, request):
-        print("doing a thing?")
-        request.session.request(*self.req_args, **self.req_kwargs)
+        if not self.tried:
+            login = requests.request(*self.req_args, **self.req_kwargs)
+            self.check_login_response(login)
+            request.prepare_cookies(login.cookies)
+            self.tried = True
         return request
+
+    def check_login_response(self, response):
+        pass
+
+    def serializer(self, data):
+        return json.dumps(data)
 
 
 class Service(object):
@@ -39,7 +76,10 @@ class Service(object):
 
     @staticmethod
     def default_data_getter(x):
-        return x['data']
+        if x['success']:
+            return x['data']
+        else:
+            raise ResponseError(x)
 
     @staticmethod
     def default_meta_getter(x):
@@ -59,7 +99,8 @@ class Service(object):
         self.trailing_slash = trailing_slash
         self.data_getter = data_getter or self.default_data_getter
         self.meta_getter = meta_getter or self.default_meta_getter
-        self.next_page_getter = next_page_getter or self.default_next_page_getter
+        self.next_page_getter = next_page_getter or \
+                                self.default_next_page_getter
         self.session = requests.Session()
         if hasattr(serializer, 'mime'):
             self.serializer = serializer
