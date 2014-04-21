@@ -4,9 +4,9 @@ Client for REST APIs.
 
 from __future__ import print_function, division
 
-import json
-import requests
-from . import data
+import functools
+from syndicate import data
+from syndicate.adapters import sync as m_sync, async as m_async
 
 
 class ServiceError(Exception):
@@ -20,55 +20,6 @@ class ResponseError(ServiceError):
 
     def __str__(self):
         return '%s(%s)' % (type(self).__name__, self.response)
-
-
-class HeaderAuth(requests.auth.AuthBase):
-    """ A simple header based auth.  Instantiate this with the header key/value
-    needed by the target API. """
-
-    def __init__(self, header, value):
-        self.header = header
-        self.value = value
-
-    def __call__(self, request):
-        request.headers[self.header] = self.value
-        return request
-
-
-class LoginAuth(requests.auth.AuthBase):
-    """ Auth where you need to perform an arbitrary "login" to get a cookie.
-    The expectation is that the args to this constructor can be used to
-    perform a request that generates the required cookie(s) for a valid
-    session. """
-
-    content_type = 'application/json'
-
-    def __init__(self, *args, **kwargs):
-        headers = {
-            'content-type': self.content_type
-        }
-        if 'headers' in kwargs:
-            headers.update(kwargs['headers'])
-        kwargs['headers'] = headers
-        if 'data' in kwargs:
-            kwargs['data'] = self.serializer(kwargs['data'])
-        self.req_args = args
-        self.req_kwargs = kwargs
-        self.tried = False
-
-    def __call__(self, request):
-        if not self.tried:
-            login = requests.request(*self.req_args, **self.req_kwargs)
-            self.check_login_response(login)
-            request.prepare_cookies(login.cookies)
-            self.tried = True
-        return request
-
-    def check_login_response(self, response):
-        pass
-
-    def serializer(self, data):
-        return json.dumps(data)
 
 
 class Service(object):
@@ -91,25 +42,36 @@ class Service(object):
 
     def __init__(self, uri=None, urn=None, auth=None, serializer='json',
                  data_getter=None, meta_getter=None, next_page_getter=None,
-                 trailing_slash=True):
+                 trailing_slash=True, async=False, adapter=None):
         if not (uri and urn):
             raise TypeError("Required: uri, urn")
+        self.auth = auth
         self.uri = uri.rstrip('/')
         self.urn = urn
+        self.filters = []
         self.trailing_slash = trailing_slash
         self.data_getter = data_getter or self.default_data_getter
         self.meta_getter = meta_getter or self.default_meta_getter
         self.next_page_getter = next_page_getter or \
                                 self.default_next_page_getter
-        self.session = requests.Session()
         if hasattr(serializer, 'mime'):
             self.serializer = serializer
         else:
             self.serializer = data.serializers[serializer]
-        self.session.headers['accept'] = self.serializer.mime
-        self.session.auth = auth
+        if adapter is None:
+            if async:
+                adapter = m_async.AsyncAdapter()
+            else:
+                adapter = m_sync.SyncAdapter()
+        self.bind_adapter(adapter)
 
-    def import_filter(self, root):
+    def bind_adapter(self, adapter):
+        adapter.set_header('accept', self.serializer.mime)
+        adapter.serializer = self.serializer
+        adapter.auth = self.auth
+        self.adapter = adapter
+
+    def import_filter(self, callback, root):
         """ Flatten a response with meta and data keys into an single object
         where the values in the meta dict are converted to attrs. """
         result = self.data_getter(root)
@@ -123,18 +85,17 @@ class Service(object):
         meta = self.meta_getter(root)
         for mkey, mval in meta.items():
             setattr(result, mkey, mval)
-        return result
+        return callback(result)
 
-    def do(self, method, path, urn=None, **query):
+    def do(self, method, path, urn=None, callback=None, **query):
         path = tuple(x.strip('/') for x in path)
         if path and self.trailing_slash:
             path += ('',)
         urn = self.urn if urn is None else urn
         url = '%s/%s' % (self.uri, urn.strip('/'))
-        d = self.session.request(method, '/'.join((url,) + path),
-                                 params=query)
-        d = self.serializer.decode(d.text)
-        return self.import_filter(d)
+        cb = functools.partial(self.import_filter, callback)
+        return self.adapter.request(method, '/'.join((url,) + path),
+                                    callback=cb, query=query)
 
     def get(self, *path, **query):
         return self.do('get', path, **query)
@@ -148,10 +109,10 @@ class Service(object):
             for x in page:
                 yield x
 
-    def post(self, *path, **query):
+    def post(self, method, *path, **query):
         raise NotImplementedError()
 
-    def delete(self, *path, **query):
+    def delete(self, method, *path, **query):
         raise NotImplementedError()
 
     def put(self, *path, **query):

@@ -1,2 +1,3 @@
-from .client import Service, LoginAuth
-from .data import Serializer, serializers
+
+def Service(*args, **kwargs):
+    return syndicate.service.Service

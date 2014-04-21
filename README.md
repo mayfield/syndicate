@@ -8,7 +8,8 @@ but should be adaptable to other API suites.
 Requirements
 ========
 
-* Requests
+* Requests (sync mode)
+* Tornado (async mode)
 
 
 Installation
@@ -25,19 +26,25 @@ Compatibility
 * Python 3.2+
 
 
+TODO
+========
+
+* Unified authentication between HTTP adapters.
+* PUT, POST, DELETE Support
+* Documentation
+
+
 Getting Started
 ========
 
-**Example**
+**Example (Syncronous mode - using requests)**
 
 ```python
 import syndicate
 
-basicauth = syndicate.BasicAuth('mrpresident', '1000xlight_points')
-bakery = syndicate.Service(host='https://a.bakery.fake', urn='/api/v1/',
-                           auth=basicauth)
+bakery = syndicate.Service(uri='https://a.bakery.fake', urn='/api/v1/',
+                           auth=('mrpresident', '1000xlight_points'))
 
-# All the cake (includes paging support)...
 for x in bakery.get('cake'):
     print("Cake is food:", x)
 
@@ -71,4 +78,30 @@ bakery.do('bake', 'cake', 100, temp=420, time=3600)
 # Translates to
 #   BAKE /api/v1/cake/100"
 #   {"temp": 420, "time": 3600}
+```
+
+
+**Example (Asyncronous mode - using tornado)**
+```python
+import syndicate
+
+bakery = syndicate.Service(uri='https://a.bakery.fake', urn='/api/v1/',
+                           auth=('mrpresident', '1000xlight_points'),
+                           async=True)
+
+# Using future objects...
+future_result = bakery.get('cake')
+
+def handle_response(f):
+    for x in f.result():
+        print("Cake is food:", x)
+
+future_result.add_done_callback(handle_response)
+
+# As a convience you can set the callback on the request...
+def handle_response(f):
+    for x in f.result():
+        print("Cake is food:", x)
+
+bakery.get('cake', callback=handle_response)
 ```

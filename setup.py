@@ -13,7 +13,8 @@ setup(
     packages=['syndicate'],
     install_requires=[
         'requests',
-        'python-dateutil'
+        'python-dateutil',
+        'tornado',
     ],
     test_suite='test',
     classifiers=[
