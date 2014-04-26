@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='syndicate',
-    version='0.99',
+    version='0.991',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
     license='LICENSE',
     long_description=open('README.md').read(),
-    packages=['syndicate'],
+    packages=find_packages(),
     install_requires=[
         'requests',
         'python-dateutil',

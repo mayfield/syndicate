@@ -5,7 +5,7 @@ Client for REST APIs.
 from __future__ import print_function, division
 
 import functools
-from syndicate import data
+from syndicate import data as m_data
 from syndicate.adapters import sync as m_sync, async as m_async
 
 
@@ -25,20 +25,24 @@ class ResponseError(ServiceError):
 class Service(object):
     """ A stateful connection to a service. """
 
-    @staticmethod
-    def default_data_getter(x):
-        if x['success']:
-            return x['data']
-        else:
-            raise ResponseError(x)
+    default_page_size = 100
 
     @staticmethod
-    def default_meta_getter(x):
-        return x['meta']
+    def default_data_getter(response):
+        content = response.content
+        if not content['success']:
+            raise ResponseError(content)
+        return content['data']
 
     @staticmethod
-    def default_next_page_getter(x):
-        return x['meta']['next']
+    def default_meta_getter(response):
+        content = response.content
+        return content['meta']
+
+    @staticmethod
+    def default_next_page_getter(response):
+        content = response.content
+        return content['meta']['next']
 
     def __init__(self, uri=None, urn=None, auth=None, serializer='json',
                  data_getter=None, meta_getter=None, next_page_getter=None,
@@ -57,7 +61,7 @@ class Service(object):
         if hasattr(serializer, 'mime'):
             self.serializer = serializer
         else:
-            self.serializer = data.serializers[serializer]
+            self.serializer = m_data.serializers[serializer]
         if adapter is None:
             if async:
                 adapter = m_async.AsyncAdapter()
@@ -71,21 +75,25 @@ class Service(object):
         adapter.auth = self.auth
         self.adapter = adapter
 
-    def import_filter(self, callback, root):
+    def import_filter(self, callback, f):
         """ Flatten a response with meta and data keys into an single object
         where the values in the meta dict are converted to attrs. """
-        result = self.data_getter(root)
-        if isinstance(result, dict):
-            result = data.DictResponse(result)
-        elif isinstance(result, list):
-            result = data.ListResponse(result)
-            result.next_page = self.next_page_getter(root)
+        response = f.result()
+        data = self.data_getter(response)
+        if isinstance(data, dict):
+            data = m_data.DictResponse(data)
+        elif isinstance(data, list):
+            data = m_data.ListResponse(data)
+            data.next_page = self.next_page_getter(response)
         else:
-            return result
-        meta = self.meta_getter(root)
+            return data
+        meta = self.meta_getter(response)
         for mkey, mval in meta.items():
-            setattr(result, mkey, mval)
-        return callback(result)
+            setattr(data, mkey, mval)
+        if callback is not None:
+            return callback(response)
+        else:
+            return response
 
     def do(self, method, path, urn=None, callback=None, **query):
         path = tuple(x.strip('/') for x in path)
@@ -101,7 +109,10 @@ class Service(object):
         return self.do('get', path, **query)
 
     def get_pager(self, *path, **query):
-        page = self.get(*path, **query)
+        page_arg = query.pop('page_size', None)
+        limit_arg = query.pop('limit', None)
+        page_size = page_arg or limit_arg or self.default_page_size
+        page = self.get(*path, limit=page_size, **query)
         for x in page:
             yield x
         while page.next_page:
