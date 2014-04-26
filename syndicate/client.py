@@ -71,14 +71,14 @@ class Service(object):
 
     def bind_adapter(self, adapter):
         adapter.set_header('accept', self.serializer.mime)
+        adapter.ingress_filter = self.ingress_filter
         adapter.serializer = self.serializer
         adapter.auth = self.auth
         self.adapter = adapter
 
-    def import_filter(self, callback, f):
+    def ingress_filter(self, response):
         """ Flatten a response with meta and data keys into an single object
         where the values in the meta dict are converted to attrs. """
-        response = f.result()
         data = self.data_getter(response)
         if isinstance(data, dict):
             data = m_data.DictResponse(data)
@@ -90,10 +90,7 @@ class Service(object):
         meta = self.meta_getter(response)
         for mkey, mval in meta.items():
             setattr(data, mkey, mval)
-        if callback is not None:
-            return callback(response)
-        else:
-            return response
+        return data
 
     def do(self, method, path, urn=None, callback=None, **query):
         path = tuple(x.strip('/') for x in path)
@@ -101,9 +98,8 @@ class Service(object):
             path += ('',)
         urn = self.urn if urn is None else urn
         url = '%s/%s' % (self.uri, urn.strip('/'))
-        cb = functools.partial(self.import_filter, callback)
         return self.adapter.request(method, '/'.join((url,) + path),
-                                    callback=cb, query=query)
+                                    callback=callback, query=query)
 
     def get(self, *path, **query):
         return self.do('get', path, **query)

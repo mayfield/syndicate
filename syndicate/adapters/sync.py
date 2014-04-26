@@ -9,17 +9,6 @@ import requests
 from syndicate.adapters import base
 
 
-class Present(object):
-    """ Emulate a future object even though we are only mindful of the
-    present. """
-
-    def __init__(self, result):
-        self._result = result
-
-    def result(self):
-        return self._result
-
-
 class SyncAdapter(base.AdapterBase):
 
     def __init__(self, *args, **kwargs):
@@ -51,7 +40,10 @@ class SyncAdapter(base.AdapterBase):
             error = None
         r = base.Response(http_code=resp.status_code, headers=resp.headers,
                           content=content, error=error, extra=resp)
-        return callback(Present(r))
+        data = self.ingress_filter(r)
+        if callback:
+            callback(data)
+        return data
 
 
 class HeaderAuth(requests.auth.AuthBase):

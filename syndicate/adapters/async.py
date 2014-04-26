@@ -76,7 +76,7 @@ class AsyncAdapter(base.AdapterBase):
                                      headers=native_resp.headers,
                                      content=content, error=None,
                                      extra=native_resp)
-                user_result.set_result(resp)
+                user_result.set_result(self.ingress_filter(resp))
 
 
 class LoginAuth(object):
