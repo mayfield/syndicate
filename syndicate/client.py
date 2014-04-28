@@ -4,9 +4,10 @@ Client for REST APIs.
 
 from __future__ import print_function, division
 
-import functools
+import collections
 from syndicate import data as m_data
 from syndicate.adapters import sync as m_sync, async as m_async
+from tornado import concurrent
 
 
 class ServiceError(Exception):
@@ -39,25 +40,19 @@ class Service(object):
         content = response.content
         return content['meta']
 
-    @staticmethod
-    def default_next_page_getter(response):
-        content = response.content
-        return content['meta']['next']
-
     def __init__(self, uri=None, urn=None, auth=None, serializer='json',
-                 data_getter=None, meta_getter=None, next_page_getter=None,
-                 trailing_slash=True, async=False, adapter=None):
+                 data_getter=None, meta_getter=None, trailing_slash=True,
+                 async=False, adapter=None):
         if not (uri and urn):
             raise TypeError("Required: uri, urn")
+        self.async = async
         self.auth = auth
-        self.uri = uri.rstrip('/')
-        self.urn = urn
         self.filters = []
         self.trailing_slash = trailing_slash
+        self.uri = uri.rstrip('/')
+        self.urn = urn
         self.data_getter = data_getter or self.default_data_getter
         self.meta_getter = meta_getter or self.default_meta_getter
-        self.next_page_getter = next_page_getter or \
-                                self.default_next_page_getter
         if hasattr(serializer, 'mime'):
             self.serializer = serializer
         else:
@@ -77,19 +72,15 @@ class Service(object):
         self.adapter = adapter
 
     def ingress_filter(self, response):
-        """ Flatten a response with meta and data keys into an single object
-        where the values in the meta dict are converted to attrs. """
+        """ Flatten a response with meta and data keys into an object. """
         data = self.data_getter(response)
         if isinstance(data, dict):
             data = m_data.DictResponse(data)
         elif isinstance(data, list):
             data = m_data.ListResponse(data)
-            data.next_page = self.next_page_getter(response)
         else:
             return data
-        meta = self.meta_getter(response)
-        for mkey, mval in meta.items():
-            setattr(data, mkey, mval)
+        data.meta = self.meta_getter(response)
         return data
 
     def do(self, method, path, urn=None, callback=None, **query):
@@ -105,16 +96,25 @@ class Service(object):
         return self.do('get', path, **query)
 
     def get_pager(self, *path, **query):
+        """ A generator for all the results a resource can provide. The pages
+        are lazily loaded. """
+        fn = self.get_pager_async if self.async else self.get_pager_sync
         page_arg = query.pop('page_size', None)
         limit_arg = query.pop('limit', None)
-        page_size = page_arg or limit_arg or self.default_page_size
-        page = self.get(*path, limit=page_size, **query)
+        query['limit'] = page_arg or limit_arg or self.default_page_size
+        return fn(path=path, query=query)
+
+    def get_pager_sync(self, path=None, query=None):
+        page = self.get(*path, **query)
         for x in page:
             yield x
-        while page.next_page:
-            page = self.get(urn=page.next_page)
+        while page.meta['next']:
+            page = self.get(urn=page.meta['next'])
             for x in page:
                 yield x
+
+    def get_pager_async(self, path=None, query=None):
+        return AsyncPager(getter=self.get, path=path, query=query)
 
     def post(self, method, *path, **query):
         raise NotImplementedError()
@@ -127,6 +127,69 @@ class Service(object):
 
     def patch(self, *path, **query):
         raise NotImplementedError()
+
+
+class AsyncPager(object):
+
+    max_overflow = 1000
+
+    def __init__(self, getter=None, path=None, query=None):
+        self.mark = 0
+        self.active = None
+        self.waiting = collections.deque()
+        self.getter = getter
+        self.path = path
+        self.query = query
+        self.stop = False
+        self.next_page = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        item = concurrent.Future()
+        self.queue_next(item)
+        return item
+
+    next = __next__
+
+    def queue_next_page(self):
+        if self.next_page:
+            self.active = self.getter(urn=self.next_page)
+        else:
+            self.active = self.getter(*self.path, **self.query)
+        self.active.add_done_callback(self.on_next_page)
+
+    def queue_next(self, item):
+        if len(self.waiting) >= self.max_overflow:
+            raise OverflowError('max overflow exceeded')
+        if self.active:
+            if self.active.done():
+                if self.active.result():
+                    item.set_result(self.active.result().pop(0))
+                elif self.stop:
+                    raise StopIteration()
+                else:
+                    self.waiting.append(item)
+                    self.queue_next_page()
+            else:
+                self.waiting.append(item)
+        else:
+            self.waiting.append(item)
+            self.queue_next_page()
+
+    def on_next_page(self, page):
+        res = page.result()
+        self.next_page = res.meta['next']
+        self.stop = not self.next_page
+        while self.waiting and res:
+            self.waiting.popleft().set_result(res.pop(0))
+        if self.waiting:
+            if self.stop:
+                while self.waiting:
+                    self.waiting.popleft().set_exception(StopIteration())
+            else:
+                self.queue_next_page()
 
 
 class Resource(dict):

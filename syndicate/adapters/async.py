@@ -45,6 +45,7 @@ class AsyncAdapter(base.AdapterBase):
             return self.auth(request)
         else:
             request.auth_username, request.auth_password = self.auth
+            # TODO: Replace with gen.maybe_future in tornado 3.3
             f = concurrent.Future()
             f.set_result(None)
             return f
