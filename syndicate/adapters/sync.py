@@ -32,7 +32,7 @@ class SyncAdapter(base.AdapterBase):
             data = self.serializer.encode(data)
         resp = self.session.request(method, url, data=data, params=query)
         try:
-            content = self.serializer.decode(resp.content)
+            content = self.serializer.decode(resp.content.decode())
         except Exception as e:
             error = e
             content = None

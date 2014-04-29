@@ -69,7 +69,7 @@ class AsyncAdapter(base.AdapterBase):
         else:
             native_resp = fetch_result.result()
             try:
-                content = self.serializer.decode(native_resp.body)
+                content = self.serializer.decode(native_resp.body.decode())
             except Exception:
                 user_result.set_exc_info(sys.exc_info())
             else:

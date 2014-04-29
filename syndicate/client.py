@@ -30,6 +30,8 @@ class Service(object):
 
     @staticmethod
     def default_data_getter(response):
+        if response.error:
+            raise response.error
         content = response.content
         if not content['success']:
             raise ResponseError(content)

@@ -4,11 +4,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='syndicate',
-    version='0.99.0',
+    version='0.99.2',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
-    license='LICENSE',
+    url='https://github.com/mayfield/syndicate/',
+    license='MIT',
     long_description=open('README.md').read(),
     packages=find_packages(),
     install_requires=[
@@ -18,7 +19,7 @@ setup(
     ],
     test_suite='test',
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
