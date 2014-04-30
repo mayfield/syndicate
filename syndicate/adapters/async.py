@@ -33,7 +33,7 @@ class AsyncAdapter(base.AdapterBase):
         if data is not None:
             data = self.serializer.encode(data)
         if query:
-            url = '%s?%s' % (url, urlencode(query))
+            url = '%s?%s' % (url, urlencode(query, doseq=True))
         request = httpclient.HTTPRequest(url, method=method.upper(),
                                          body=data, headers=self.headers)
         start = lambda f: self.start_request(f, request, user_result)
