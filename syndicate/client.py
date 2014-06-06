@@ -85,14 +85,15 @@ class Service(object):
         data.meta = self.meta_getter(response)
         return data
 
-    def do(self, method, path, urn=None, callback=None, **query):
+    def do(self, method, path, urn=None, callback=None, data=None, **query):
         path = tuple(x.strip('/') for x in path)
         if path and self.trailing_slash:
             path += ('',)
         urn = self.urn if urn is None else urn
         url = '%s/%s' % (self.uri, urn.strip('/'))
         return self.adapter.request(method, '/'.join((url,) + path),
-                                    callback=callback, query=query)
+                                    callback=callback, data=data,
+                                    query=query)
 
     def get(self, *path, **query):
         return self.do('get', path, **query)
@@ -118,17 +119,23 @@ class Service(object):
     def get_pager_async(self, path=None, query=None):
         return AsyncPager(getter=self.get, path=path, query=query)
 
-    def post(self, method, *path, **query):
-        raise NotImplementedError()
+    def post(self, *path_and_data, **query):
+        path = list(path_and_data)
+        data = path.pop(-1)
+        return self.do('post', path, data=data, **query)
 
     def delete(self, method, *path, **query):
-        raise NotImplementedError()
+        return self.do('delete', path, **query)
 
-    def put(self, *path, **query):
-        raise NotImplementedError()
+    def put(self, *path_and_data, **query):
+        path = list(path_and_data)
+        data = path.pop(-1)
+        return self.do('put', path, data=data, **query)
 
-    def patch(self, *path, **query):
-        raise NotImplementedError()
+    def patch(self, *path_and_data, **query):
+        path = list(path_and_data)
+        data = path.pop(-1)
+        return self.do('patch', path, data=data, **query)
 
 
 class AsyncPager(object):

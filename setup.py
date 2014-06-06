@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='syndicate',
-    version='0.99.2',
+    version='0.99.3',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
