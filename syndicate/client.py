@@ -124,8 +124,9 @@ class Service(object):
         data = path.pop(-1)
         return self.do('post', path, data=data, **query)
 
-    def delete(self, method, *path, **query):
-        return self.do('delete', path, **query)
+    def delete(self, *path, **query):
+        data = query.pop('data', None)
+        return self.do('delete', path, data=data, **query)
 
     def put(self, *path_and_data, **query):
         path = list(path_and_data)
