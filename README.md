@@ -33,7 +33,6 @@ TODO
 ========
 
 * Unified authentication between HTTP adapters.
-* PUT, POST, DELETE Support
 * Documentation
 
 
