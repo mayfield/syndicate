@@ -40,7 +40,7 @@ class Service(object):
     @staticmethod
     def default_meta_getter(response):
         content = response.content
-        return content['meta']
+        return content.get('meta')
 
     def __init__(self, uri=None, urn=None, auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
@@ -68,6 +68,7 @@ class Service(object):
 
     def bind_adapter(self, adapter):
         adapter.set_header('accept', self.serializer.mime)
+        adapter.set_header('content-type', self.serializer.mime)
         adapter.ingress_filter = self.ingress_filter
         adapter.serializer = self.serializer
         adapter.auth = self.auth

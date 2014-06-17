@@ -118,3 +118,18 @@ class LoginAuth(object):
 
     def serializer(self, data):
         return json.dumps(data)
+
+
+class HeaderAuth(object):
+    """ A simple header based auth.  Instantiate this with the header key/value
+    needed by the target API. """
+
+    def __init__(self, header, value):
+        self.header = header
+        self.value = value
+
+    def __call__(self, request):
+        import pdb
+        pdb.set_trace()
+        request.headers[self.header] = self.value
+        return request
