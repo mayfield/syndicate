@@ -42,13 +42,13 @@ class AsyncAdapter(base.AdapterBase):
 
     def authenticate(self, request):
         if callable(self.auth):
-            return self.auth(request)
+            self.auth(request)
         else:
             request.auth_username, request.auth_password = self.auth
-            # TODO: Replace with gen.maybe_future in tornado 3.3
-            f = concurrent.Future()
-            f.set_result(None)
-            return f
+        # TODO: Replace with gen.maybe_future in tornado 3.3
+        f = concurrent.Future()
+        f.set_result(None)
+        return f
 
     def start_request(self, auth_result, request, user_result):
         if auth_result.exception():
@@ -129,7 +129,5 @@ class HeaderAuth(object):
         self.value = value
 
     def __call__(self, request):
-        import pdb
-        pdb.set_trace()
         request.headers[self.header] = self.value
         return request
