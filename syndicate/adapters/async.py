@@ -42,7 +42,7 @@ class AsyncAdapter(base.AdapterBase):
 
     def authenticate(self, request):
         if callable(self.auth):
-            return self.auth(request)
+            self.auth(request)
         else:
             request.auth_username, request.auth_password = self.auth
         # TODO: Replace with gen.maybe_future in tornado 3.3
