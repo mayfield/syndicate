@@ -9,35 +9,35 @@ roughly the same way.
 
 
 Requirements
-========
+--------
 
 * Requests (sync mode)
 * Tornado (async mode)
 
 
 Installation
-========
+--------
 
     python ./setup.py build
     python ./setup.py install
 
 
 Compatibility
-========
+--------
 
 * Python 2.7
 * Python 3.3+
 
 
 TODO
-========
+--------
 
 * Unified authentication between HTTP adapters.
 * Documentation
 
 
 Getting Started
-========
+--------
 
 Syndicate has two basic modes for communicating with an API, sync and async.
 The sync mode uses the 'requests' library as the HTTP adapter and the async
@@ -49,7 +49,7 @@ authentication, session management (via an adapter) and serialization.
 
 
 Synchronous Examples
-========
+--------
 
 **Creating a connnection**
 
@@ -134,7 +134,7 @@ bakery.do('bake', 'cake', 100, temp=420, time=3600)
 
 
 Asynchronous Examples
-========
+--------
 
 Async service connections use Tornado, http://www.tornadoweb.org/.
 If this is your first time doing async programming or using tornado, you
