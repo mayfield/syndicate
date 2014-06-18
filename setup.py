@@ -10,7 +10,7 @@ setup(
     author_email='tooker@gmail.com',
     url='https://github.com/mayfield/syndicate/',
     license='MIT',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     packages=find_packages(),
     install_requires=[
         'requests',
