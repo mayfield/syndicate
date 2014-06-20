@@ -35,7 +35,7 @@ class Service(object):
         content = response.content
         if not content['success']:
             raise ResponseError(content)
-        return content['data']
+        return content.get('data')
 
     @staticmethod
     def default_meta_getter(response):
