@@ -21,12 +21,15 @@ class AsyncAdapter(base.AdapterBase):
         config = kwargs.pop('config', {})
         self.client = httpclient.AsyncHTTPClient(**config)
         self.headers = {}
+        self.request_timeout = None
+        self.connect_timeout = None
         super(AsyncAdapter, self).__init__(*args, **kwargs)
 
     def set_header(self, header, value):
         self.headers[header] = value
 
-    def request(self, method, url, data=None, query=None, callback=None):
+    def request(self, method, url, data=None, query=None, callback=None,
+                timeout=None):
         user_result = concurrent.TracebackFuture()
         if callback is not None:
             user_result.add_done_callback(callback)
@@ -34,8 +37,11 @@ class AsyncAdapter(base.AdapterBase):
             data = self.serializer.encode(data)
         if query:
             url = '%s?%s' % (url, urlencode(query, doseq=True))
+        timeout = self.request_timeout if timeout is None else timeout
         request = httpclient.HTTPRequest(url, method=method.upper(),
-                                         body=data, headers=self.headers)
+                                         body=data, headers=self.headers,
+                                         request_timeout=timeout,
+                                         connect_timeout=self.connect_timeout)
         start = lambda f: self.start_request(f, request, user_result)
         self.authenticate(request).add_done_callback(start)
         return user_result

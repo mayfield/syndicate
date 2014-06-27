@@ -14,6 +14,7 @@ class SyncAdapter(base.AdapterBase):
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', {})
         self.session = requests.Session(**config)
+        self.request_timeout = None
         super(SyncAdapter, self).__init__(*args, **kwargs)
 
     def set_header(self, header, value):
@@ -27,10 +28,13 @@ class SyncAdapter(base.AdapterBase):
     def auth(self, value):
         self.session.auth = value
 
-    def request(self, method, url, data=None, callback=None, query=None):
+    def request(self, method, url, data=None, query=None, callback=None,
+                timeout=None):
         if data is not None:
             data = self.serializer.encode(data)
-        resp = self.session.request(method, url, data=data, params=query)
+        timeout = self.request_timeout if timeout is None else timeout
+        resp = self.session.request(method, url, data=data, params=query,
+                                    timeout=timeout)
         try:
             content = self.serializer.decode(resp.content.decode())
         except Exception as e:

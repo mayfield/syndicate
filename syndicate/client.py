@@ -44,7 +44,7 @@ class Service(object):
 
     def __init__(self, uri=None, urn=None, auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
-                 async=False, adapter=None):
+                 async=False, adapter=None, request_timeout=None):
         if not (uri and urn):
             raise TypeError("Required: uri, urn")
         self.async = async
@@ -53,6 +53,7 @@ class Service(object):
         self.trailing_slash = trailing_slash
         self.uri = uri.rstrip('/')
         self.urn = urn
+        self.request_timeout = request_timeout
         self.data_getter = data_getter or self.default_data_getter
         self.meta_getter = meta_getter or self.default_meta_getter
         if hasattr(serializer, 'mime'):
@@ -69,6 +70,7 @@ class Service(object):
     def bind_adapter(self, adapter):
         adapter.set_header('accept', self.serializer.mime)
         adapter.set_header('content-type', self.serializer.mime)
+        adapter.request_timeout = self.request_timeout
         adapter.ingress_filter = self.ingress_filter
         adapter.serializer = self.serializer
         adapter.auth = self.auth
