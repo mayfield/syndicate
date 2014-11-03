@@ -35,13 +35,17 @@ class SyncAdapter(base.AdapterBase):
         timeout = self.request_timeout if timeout is None else timeout
         resp = self.session.request(method, url, data=data, params=query,
                                     timeout=timeout)
-        try:
-            content = self.serializer.decode(resp.content.decode())
-        except Exception as e:
-            error = e
-            content = None
-        else:
-            error = None
+        content = None
+        error = None
+        if resp.status_code != 204:
+            try:
+                content = self.serializer.decode(resp.content.decode())
+            except Exception as e:
+                error = e
+                content = None
+            else:
+                error = None
+
         r = base.Response(http_code=resp.status_code, headers=resp.headers,
                           content=content, error=error, extra=resp)
         data = self.ingress_filter(r)

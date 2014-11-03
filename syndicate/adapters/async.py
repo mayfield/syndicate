@@ -76,8 +76,10 @@ class AsyncAdapter(base.AdapterBase):
             concurrent.chain_future(fetch_result, user_result)
         else:
             native_resp = fetch_result.result()
+            content = None
             try:
-                content = self.serializer.decode(native_resp.body.decode())
+                if native_resp.code != 204:
+                    content = self.serializer.decode(native_resp.body.decode())
             except Exception:
                 user_result.set_exc_info(sys.exc_info())
             else:
