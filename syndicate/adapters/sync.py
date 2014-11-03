@@ -35,8 +35,10 @@ class SyncAdapter(base.AdapterBase):
         timeout = self.request_timeout if timeout is None else timeout
         resp = self.session.request(method, url, data=data, params=query,
                                     timeout=timeout)
+        content = None
         try:
-            content = self.serializer.decode(resp.content.decode())
+            if resp.content and len(resp.content):
+                content = self.serializer.decode(resp.content.decode())
         except Exception as e:
             error = e
             content = None
