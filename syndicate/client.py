@@ -32,6 +32,8 @@ class Service(object):
     def default_data_getter(response):
         if response.error:
             raise response.error
+        if response.http_code == 204:
+            return None
         content = response.content
         if not content['success']:
             raise ResponseError(content)
@@ -39,6 +41,8 @@ class Service(object):
 
     @staticmethod
     def default_meta_getter(response):
+        if response.http_code == 204:
+            return None
         content = response.content
         return content.get('meta')
 
