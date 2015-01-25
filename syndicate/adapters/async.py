@@ -97,8 +97,9 @@ class LoginAuth(object):
     session. """
 
     content_type = 'application/json'
+    OK_HTTP_CODES = 200, 201
 
-    def __init__(self, url, method=None, **kwargs):
+    def __init__(self, url, method='POST', **kwargs):
         headers = {
             'content-type': self.content_type
         }
@@ -123,7 +124,7 @@ class LoginAuth(object):
         request.headers['cookie'] = response.headers['set-cookie']
 
     def check_login_response(self):
-        if self.login.result().code != 200:
+        if self.login.result().code not in self.OK_HTTP_CODES:
             raise Exception('login failed')
 
     def serializer(self, data):

@@ -15,7 +15,7 @@ def long_desc():
 
 setup(
     name='syndicate',
-    version='0.99.9',
+    version='1.0.0',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
@@ -30,7 +30,7 @@ setup(
     ],
     test_suite='test',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
