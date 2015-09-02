@@ -46,16 +46,16 @@ class Service(object):
             return None
         return content.get('meta')
 
-    def __init__(self, uri=None, urn=None, auth=None, serializer='json',
+    def __init__(self, uri=None, urn='', auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
                  async=False, adapter=None, request_timeout=None):
-        if not (uri and urn):
-            raise TypeError("Required: uri, urn")
+        if not uri:
+            raise TypeError("Required: uri")
         self.async = async
         self.auth = auth
         self.filters = []
         self.trailing_slash = trailing_slash
-        self.uri = uri.rstrip('/')
+        self.uri = uri
         self.urn = urn
         self.request_timeout = request_timeout
         self.data_getter = data_getter or self.default_data_getter
@@ -93,13 +93,12 @@ class Service(object):
         return data
 
     def do(self, method, path, urn=None, callback=None, data=None, **query):
-        path = tuple(x.strip('/') for x in path)
+        urlparts = [self.uri, self.urn if urn is None else urn]
+        urlparts.extend(path)
+        url = '/'.join(filter(None, (x.strip('/') for x in urlparts)))
         if path and self.trailing_slash:
-            path += ('',)
-        urn = self.urn if urn is None else urn
-        url = '%s/%s' % (self.uri, urn.strip('/'))
-        return self.adapter.request(method, '/'.join((url,) + path),
-                                    callback=callback, data=data,
+            url += '/'
+        return self.adapter.request(method, url, callback=callback, data=data,
                                     query=query)
 
     def get(self, *path, **query):

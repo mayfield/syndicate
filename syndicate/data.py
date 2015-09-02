@@ -9,6 +9,7 @@ import datetime
 import dateutil.parser
 import json
 import re
+from xml.etree import ElementTree
 
 Serializer = collections.namedtuple('Serializer', 'mime, encode, decode')
 
@@ -50,5 +51,8 @@ class NormalJSONDecoder(json.JSONDecoder):
 serializers = {
     'json': Serializer('application/json',
                        NormalJSONEncoder().encode,
-                       NormalJSONDecoder().decode)
+                       NormalJSONDecoder().decode),
+    'xml': Serializer('text/xml',
+                      ElementTree.tostring,
+                      ElementTree.fromstring)
 }
