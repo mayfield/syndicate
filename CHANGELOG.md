@@ -16,4 +16,4 @@
 
 
 [unreleased]: https://github.com/mayfield/syndicate/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/mayfield/syndicate/compare/...v1.0.0
+[1.0.0]: https://github.com/mayfield/syndicate/compare/92534936f0368937699511d0d08f103ac037878b...v1.0.0
