@@ -1,5 +1,5 @@
 """
-Syncronous adapter based on the 'tornado'.
+Asyncronous adapter using the 'tornado' engine.
 """
 
 from __future__ import print_function, division
@@ -47,11 +47,11 @@ class AsyncAdapter(base.AdapterBase):
         return user_result
 
     def authenticate(self, request):
+        f = None
         if callable(self.auth):
             f = self.auth(request)
-        else:
+        elif self.auth is not None:
             request.auth_username, request.auth_password = self.auth
-            f = None
         if f is None:
             # TODO: Replace with gen.maybe_future in tornado 3.3
             f = concurrent.Future()
@@ -132,12 +132,15 @@ class LoginAuth(object):
 
 
 class HeaderAuth(object):
-    """ A simple header based auth.  Instantiate this with the header key/value
-    needed by the target API. """
+    """ A simple header based auth.  Instantiate this with header name and
+    value arguments for a single header or with a dictionary of name/value
+    pairs. """
 
-    def __init__(self, header, value):
-        self.header = header
-        self.value = value
+    def __init__(self, header_or_headers_dict, value=None):
+        if hasattr(header_or_headers_dict, 'items'):
+            self.headers = header_or_headers_dict.copy()
+        else:
+            self.headers = {header_or_headers_dict: value}
 
     def __call__(self, request):
-        request.headers[self.header] = self.value
+        request.headers.update(self.headers)

@@ -96,7 +96,7 @@ class Service(object):
         urlparts = [self.uri, self.urn if urn is None else urn]
         urlparts.extend(path)
         url = '/'.join(filter(None, (x.strip('/') for x in urlparts)))
-        if path and self.trailing_slash:
+        if self.trailing_slash:
             url += '/'
         return self.adapter.request(method, url, callback=callback, data=data,
                                     query=query)

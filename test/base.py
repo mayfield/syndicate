@@ -5,15 +5,16 @@ Sanity tests for the syndicate library.
 from __future__ import print_function, division
 
 import datetime
-import io
 import syndicate
+import syndicate.adapters.async
+import syndicate.adapters.sync
+import syndicate.data
 import unittest
-from tornado import httpclient
 
 
 class BaseTest(unittest.TestCase):
 
-    def test_service_construct(self):
+    def notest_service_construct(self):
         self.assertRaises(TypeError, syndicate.Service)
         syndicate.Service(uri='foo', urn='bar')
 
@@ -26,27 +27,100 @@ class BaseTest(unittest.TestCase):
                 "born": datetime.datetime.utcnow()
             }
         }
-        data = syndicate.serializers['json'].encode(input_)
-        output = syndicate.serializers['json'].decode(data)
+        data = syndicate.data.serializers['json'].encode(input_)
+        output = syndicate.data.serializers['json'].decode(data)
         self.assertEqual(input_, output)
 
 
-class MockAsyncClient(object):
+class AuthTests(unittest.TestCase):
 
-    def __init__(self, data_callback=None):
-        self.data_callback = data_callback
+    sync = syndicate.adapters.sync
+    async = syndicate.adapters.async
 
-    def fetch(self, url, method=None, body=None, callback=None, headers=None):
-        buf = io.StringIO(self.data_callback())
-        req = httpclient.HTTPRequest(url, method=method, headers=headers)
-        resp = httpclient.HTTPResponse(req, 200, buffer=buf)
-        return callback(resp)
+    def request(self):
+        class Request(object): pass
+        r = Request()
+        r.headers = {}
+        return r
+
+    def test_header_auth_single(self):
+        for Auth in (self.sync.HeaderAuth, self.async.HeaderAuth):
+            request = self.request()
+            auth = Auth("foo", "bar")
+            auth(request)
+            self.assertEqual(request.headers, {'foo': 'bar'})
+            auth = Auth("bar", "foo")
+            auth(request)
+            self.assertEqual(request.headers, {'foo': 'bar', 'bar': 'foo'})
+
+    def test_header_auth_multi(self):
+        for Auth in (self.sync.HeaderAuth, self.async.HeaderAuth):
+            request = self.request()
+            auth = Auth({"foo": "bar"})
+            auth(request)
+            self.assertEqual(request.headers, {'foo': 'bar'})
+            auth = Auth({"bar": "foo"})
+            auth(request)
+            self.assertEqual(request.headers, {'foo': 'bar', 'bar': 'foo'})
+            auth = Auth({"foo": "replace"})
+            auth(request)
+            self.assertEqual(request.headers, {'foo': 'replace', 'bar': 'foo'})
 
 
-class AdapterTest(unittest.TestCase):
+class URLTests(unittest.TestCase):
 
-    def test_async_adapter(self):
-        test = lambda: u'ABC'
-        s = syndicate.Service(uri='john', urn='belushi', async=True)
-        s.adapter.client = MockAsyncClient(data_callback=test)
-        assert s.get('foo')
+    valid_path_signatures = {
+        (): '%s',
+        ('',): '%s',
+        ('', ''): '%s',
+        ('one', ''): '%s/one',
+        ('', 'one'): '%s/one',
+        ('', 'one', ''): '%s/one',
+        ('/', 'one', ''): '%s/one',
+        ('/one', '', ''): '%s/one',
+        ('/one',): '%s/one',
+        ('/one/',): '%s/one',
+        ('one/',): '%s/one',
+        ('one',): '%s/one',
+        ('one', '/two'): '%s/one/two',
+        ('one', '/two/'): '%s/one/two',
+        ('one', 'two/'): '%s/one/two',
+        ('one/', '/two'): '%s/one/two',
+        ('/one/', '/two/'): '%s/one/two',
+        # ('//foo//one/', '/two/'): '%s/one/two',  # TODO support this.
+    }
+
+    def snoop_request(self, service, snoop_callback):
+        service.adapter.request = lambda m, url, **na: snoop_callback(url)
+
+    def clean_url_filter(self, url):
+        scheme, sep, uri = url.partition('://')
+        self.assertEqual(scheme, 'https')
+        self.assertEqual(sep, '://')  # ?
+        self.assertNotIn('//', uri)
+        return uri
+
+    def test_uri_and_urn_slash_collapse(self):
+        uri = 'tld/urn'
+        for tld in ('tld', 'tld/'):
+            for urn in ('urn', 'urn/', '/urn', '/urn/'):
+                s = syndicate.Service(uri='https://%s' % tld, urn=urn)
+                self.snoop_request(s, self.clean_url_filter)
+                for args, valid_fmt in self.valid_path_signatures.items():
+                    self.assertEqual(s.get(*args), (valid_fmt % uri) + '/')
+                s = syndicate.Service(uri='https://%s' % tld, urn=urn, trailing_slash=False)
+                self.snoop_request(s, self.clean_url_filter)
+                for args, valid_fmt in self.valid_path_signatures.items():
+                    self.assertEqual(s.get(*args), valid_fmt % uri)
+
+    def test_no_urn(self):
+        uri = 'tld'
+        for tld in ('tld', 'tld/'):
+            s = syndicate.Service(uri='https://%s' % tld)
+            self.snoop_request(s, self.clean_url_filter)
+            for args, valid_fmt in self.valid_path_signatures.items():
+                self.assertEqual(s.get(*args), (valid_fmt % uri) + '/')
+            s = syndicate.Service(uri='https://%s' % tld, trailing_slash=False)
+            self.snoop_request(s, self.clean_url_filter)
+            for args, valid_fmt in self.valid_path_signatures.items():
+                self.assertEqual(s.get(*args), valid_fmt % uri)
