@@ -7,6 +7,8 @@ published these days.  Currently Tastypie APIs are the primary target but the
 system should be compossible enough to work with other APIs if they work
 roughly the same way. 
 
+**[CHANGELOG](CHANGELOG.md)**
+
 
 Requirements
 --------
