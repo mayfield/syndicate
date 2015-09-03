@@ -5,6 +5,7 @@
 ### Changed
 - xml serializer support
 - multi header support of HeaderAuth
+- Service(trailing_slash=True) will always append a slash
 
 ### Fixed
 - urn-less support for APIs that don't have a fixed urn
