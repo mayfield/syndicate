@@ -5,6 +5,7 @@ Client for REST APIs.
 from __future__ import print_function, division
 
 import collections
+import re
 from syndicate import data as m_data
 from syndicate.adapters import sync as m_sync, async as m_async
 from tornado import concurrent
@@ -27,6 +28,7 @@ class Service(object):
     """ A stateful connection to a service. """
 
     default_page_size = 100
+    urlpartition = re.compile('([?;])')
 
     @staticmethod
     def default_data_getter(response):
@@ -97,7 +99,10 @@ class Service(object):
         urlparts.extend(path)
         url = '/'.join(filter(None, (x.strip('/') for x in urlparts)))
         if self.trailing_slash:
-            url += '/'
+            parts = self.urlpartition.split(url, 1)
+            if not parts[0].endswith('/'):
+                parts[0] += '/'
+                url = ''.join(parts)
         return self.adapter.request(method, url, callback=callback, data=data,
                                     query=query)
 

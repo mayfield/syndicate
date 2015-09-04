@@ -124,3 +124,9 @@ class URLTests(unittest.TestCase):
             self.snoop_request(s, self.clean_url_filter)
             for args, valid_fmt in self.valid_path_signatures.items():
                 self.assertEqual(s.get(*args), valid_fmt % uri)
+
+    def test_slashes_with_hidden_query(self):
+        s = syndicate.Service(uri='https://tld/')
+        self.snoop_request(s, self.clean_url_filter)
+        self.assertEqual(s.get('foo?hide=me'), 'tld/foo/?hide=me')
+        self.assertEqual(s.get(urn='foo?hide=me'), 'tld/foo/?hide=me')
