@@ -1,10 +1,10 @@
 # Change Log
 
 
-## [Unreleased][unreleased]
+## [Unreleased] - unreleased
 
 
-## [1.1.0][2015-09-09]
+## [1.1.0] - 2015-09-09
 ### Changed
 - xml serializer support
 - multi header support of HeaderAuth
