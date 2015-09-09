@@ -5,9 +5,14 @@ Abstraction for HTTP based REST APIs.  This provides a means to generically
 handle serialization (JSON) and URI mapping as seen in many of the REST APIs
 published these days.  Currently Tastypie APIs are the primary target but the
 system should be compossible enough to work with other APIs if they work
-roughly the same way. 
+roughly the same way.
 
-**[CHANGELOG](CHANGELOG.md)**
+
+Status
+--------
+
+[![Change Log](https://img.shields.io/badge/change-log-blue.svg)](https://github.com/mayfield/syndicate/blob/master/CHANGELOG.md)
+[![Build Status](https://semaphoreci.com/api/v1/projects/50fbd264-8014-4fbd-9295-c99c65c8b05a/533670/shields_badge.svg)](https://semaphoreci.com/mayfield/syndicate)
 
 
 Requirements
