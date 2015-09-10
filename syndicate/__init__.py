@@ -8,4 +8,3 @@ __all__ = (
 )
 
 Service = syndicate.client.Service
-Resource = syndicate.client.Resource

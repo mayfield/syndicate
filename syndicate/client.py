@@ -94,7 +94,8 @@ class Service(object):
         data.meta = self.meta_getter(response)
         return data
 
-    def do(self, method, path, urn=None, callback=None, data=None, **query):
+    def do(self, method, path, urn=None, callback=None, data=None,
+           timeout=None, **query):
         urlparts = [self.uri, self.urn if urn is None else urn]
         urlparts.extend(path)
         url = '/'.join(filter(None, (x.strip('/') for x in urlparts)))
@@ -104,22 +105,22 @@ class Service(object):
                 parts[0] += '/'
                 url = ''.join(parts)
         return self.adapter.request(method, url, callback=callback, data=data,
-                                    query=query)
+                                    query=query, timeout=timeout)
 
-    def get(self, *path, **query):
-        return self.do('get', path, **query)
+    def get(self, *path, **kwargs):
+        return self.do('get', path, **kwargs)
 
-    def get_pager(self, *path, **query):
+    def get_pager(self, *path, **kwargs):
         """ A generator for all the results a resource can provide. The pages
         are lazily loaded. """
         fn = self.get_pager_async if self.async else self.get_pager_sync
-        page_arg = query.pop('page_size', None)
-        limit_arg = query.pop('limit', None)
-        query['limit'] = page_arg or limit_arg or self.default_page_size
-        return fn(path=path, query=query)
+        page_arg = kwargs.pop('page_size', None)
+        limit_arg = kwargs.pop('limit', None)
+        kwargs['limit'] = page_arg or limit_arg or self.default_page_size
+        return fn(path=path, kwargs=kwargs)
 
-    def get_pager_sync(self, path=None, query=None):
-        page = self.get(*path, **query)
+    def get_pager_sync(self, path=None, kwargs=None):
+        page = self.get(*path, **kwargs)
         for x in page:
             yield x
         while page.meta['next']:
@@ -127,40 +128,40 @@ class Service(object):
             for x in page:
                 yield x
 
-    def get_pager_async(self, path=None, query=None):
-        return AsyncPager(getter=self.get, path=path, query=query)
+    def get_pager_async(self, path=None, kwargs=None):
+        return AsyncPager(getter=self.get, path=path, kwargs=kwargs)
 
-    def post(self, *path_and_data, **query):
+    def post(self, *path_and_data, **kwargs):
         path = list(path_and_data)
         data = path.pop(-1)
-        return self.do('post', path, data=data, **query)
+        return self.do('post', path, data=data, **kwargs)
 
-    def delete(self, *path, **query):
-        data = query.pop('data', None)
-        return self.do('delete', path, data=data, **query)
+    def delete(self, *path, **kwargs):
+        data = kwargs.pop('data', None)
+        return self.do('delete', path, data=data, **kwargs)
 
-    def put(self, *path_and_data, **query):
+    def put(self, *path_and_data, **kwargs):
         path = list(path_and_data)
         data = path.pop(-1)
-        return self.do('put', path, data=data, **query)
+        return self.do('put', path, data=data, **kwargs)
 
-    def patch(self, *path_and_data, **query):
+    def patch(self, *path_and_data, **kwargs):
         path = list(path_and_data)
         data = path.pop(-1)
-        return self.do('patch', path, data=data, **query)
+        return self.do('patch', path, data=data, **kwargs)
 
 
 class AsyncPager(object):
 
     max_overflow = 1000
 
-    def __init__(self, getter=None, path=None, query=None):
+    def __init__(self, getter=None, path=None, kwargs=None):
         self.mark = 0
         self.active = None
         self.waiting = collections.deque()
         self.getter = getter
         self.path = path
-        self.query = query
+        self.kwargs = kwargs
         self.stop = False
         self.next_page = None
 
@@ -178,7 +179,7 @@ class AsyncPager(object):
         if self.next_page:
             self.active = self.getter(urn=self.next_page)
         else:
-            self.active = self.getter(*self.path, **self.query)
+            self.active = self.getter(*self.path, **self.kwargs)
         self.active.add_done_callback(self.on_next_page)
 
     def queue_next(self, item):
@@ -211,22 +212,3 @@ class AsyncPager(object):
                     self.waiting.popleft().set_exception(StopIteration())
             else:
                 self.queue_next_page()
-
-
-class Resource(dict):
-    """ Extended dictionary format that makes future operations on this object
-    more object-mapper like. """
-
-    def do(self, method, *path, **query):
-        """ XXX: Debatable existence. """
-        raise NotImplementedError()
-
-    def fetch(self, method, *path, **query):
-        """ Get a subresource. """
-        raise NotImplementedError()
-
-    def save(self):
-        raise NotImplementedError()
-
-    def delete(self, method, *path, **query):
-        raise NotImplementedError()

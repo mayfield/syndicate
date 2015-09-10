@@ -4,6 +4,11 @@
 ## [Unreleased] - unreleased
 
 
+## [1.2.0] - 2015-09-10
+### Added
+- Support for per request timeouts via {get,post,put,...}(..., timeout=10)
+
+
 ## [1.1.0] - 2015-09-09
 ### Changed
 - xml serializer support
@@ -19,6 +24,7 @@
 - First stable release
 
 
-[unreleased]: https://github.com/mayfield/syndicate/compare/v1.1.0...HEAD
+[unreleased]: https://github.com/mayfield/syndicate/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/mayfield/syndicate/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/mayfield/syndicate/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/mayfield/syndicate/compare/b9ec552eb9967c5622053c33b0b0a4789a16ffab...v1.0.0
