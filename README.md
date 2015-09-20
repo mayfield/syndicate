@@ -8,8 +8,9 @@ syndicate
 [![Build Status](https://semaphoreci.com/api/v1/projects/50fbd264-8014-4fbd-9295-c99c65c8b05a/533670/shields_badge.svg)](https://semaphoreci.com/mayfield/syndicate)
 [![PyPI](https://img.shields.io/pypi/dm/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
 
---------
 
+About
+--------
 
 Syndicate is a library for using HTTP based REST APIs.  This provides a means
 to generically handle serialization (JSON, XML) and URI mapping as seen in many
