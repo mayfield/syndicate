@@ -1,12 +1,12 @@
 syndicate
 ===========
-**_A wrapper for REST APIs_**
+_*A wrapper for REST APIs*_
 
-[![PyPI](https://img.shields.io/pypi/status/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
-[![PyPI](https://img.shields.io/pypi/l/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
+[![Maturity](https://img.shields.io/pypi/status/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
+[![License](https://img.shields.io/pypi/l/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
 [![Change Log](https://img.shields.io/badge/change-log-blue.svg)](https://github.com/mayfield/syndicate/blob/master/CHANGELOG.md)
 [![Build Status](https://semaphoreci.com/api/v1/projects/50fbd264-8014-4fbd-9295-c99c65c8b05a/533670/shields_badge.svg)](https://semaphoreci.com/mayfield/syndicate)
-[![PyPI](https://img.shields.io/pypi/dm/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
+[![Version](https://img.shields.io/pypi/v/syndicate.svg)](https://pypi.python.org/pypi/syndicate)
 
 
 About
