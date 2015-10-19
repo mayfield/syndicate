@@ -21,12 +21,22 @@ class AsyncAdapter(base.AdapterBase):
         config = kwargs.pop('config', {})
         self.client = httpclient.AsyncHTTPClient(**config)
         self.headers = {}
+        self.cookies = {}
         self.request_timeout = None
         self.connect_timeout = None
         super(AsyncAdapter, self).__init__(*args, **kwargs)
 
     def set_header(self, header, value):
         self.headers[header] = value
+
+    def get_header(self, header):
+        return self.headers[header]
+
+    def set_cookie(self, cookie, value):
+        self.cookies[cookie] = value
+
+    def get_cookie(self, cookie):
+        return self.cookies[cookie]
 
     def request(self, method, url, data=None, query=None, callback=None,
                 timeout=None):
@@ -38,8 +48,12 @@ class AsyncAdapter(base.AdapterBase):
         if query:
             url = '%s?%s' % (url, urlencode(query, doseq=True))
         timeout = self.request_timeout if timeout is None else timeout
+        headers = self.headers.copy()
+        if self.cookies:
+            headers['Cookie'] = '; '.join('%s=%s' % (x)
+                                          for x in self.cookies.items())
         request = httpclient.HTTPRequest(url, method=method.upper(),
-                                         body=data, headers=self.headers,
+                                         body=data, headers=headers,
                                          request_timeout=timeout,
                                          connect_timeout=self.connect_timeout)
         start = lambda f: self.start_request(f, request, user_result)

@@ -20,6 +20,15 @@ class SyncAdapter(base.AdapterBase):
     def set_header(self, header, value):
         self.session.headers[header] = value
 
+    def get_header(self, header):
+        return self.session.headers[header]
+
+    def set_cookie(self, cookie, value):
+        self.session.cookies[cookie] = value
+
+    def get_cookie(self, cookie):
+        return self.session.cookies.get_dict()[cookie]
+
     @property
     def auth(self):
         return self.session.auth

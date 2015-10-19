@@ -19,5 +19,17 @@ class AdapterBase(object):
         """ Set a header that will be included in every HTTP request. """
         raise NotImplementedError('pure virtual method')
 
+    def get_header(self, header):
+        """ Examine a header that would be included in every HTTP request. """
+        raise NotImplementedError('pure virtual method')
+
+    def set_cookie(self, cookie, value):
+        """ Set a session cookie. """
+        raise NotImplementedError('pure virtual method')
+
+    def get_cookie(self, cookie):
+        """ Examine a cookie morsel. """
+        raise NotImplementedError('pure virtual method')
+
     def request(self, method, url, data=None, callback=None, query=None):
         raise NotImplementedError('pure virtual method')
