@@ -123,13 +123,7 @@ class Service(object):
         return fn(path=path, kwargs=kwargs)
 
     def get_pager_sync(self, path=None, kwargs=None):
-        page = self.get(*path, **kwargs)
-        for x in page:
-            yield x
-        while page.meta['next']:
-            page = self.get(urn=page.meta['next'])
-            for x in page:
-                yield x
+        return SyncPager(getter=self.get, path=path, kwargs=kwargs)
 
     def get_pager_async(self, path=None, kwargs=None):
         return AsyncPager(getter=self.get, path=path, kwargs=kwargs)
@@ -154,17 +148,57 @@ class Service(object):
         return self.do('patch', path, data=data, **kwargs)
 
 
+class AdapterPager(object):
+    """ A sized generator that iterators over API pages. """
+
+    def __init__(self, getter=None, path=None, kwargs=None):
+        self.getter = getter
+        self.path = path
+        self.kwargs = kwargs
+        super(AdapterPager, self).__init__()
+
+    def __len__(self):
+        raise NotImplementedError("pure virtual")
+
+
+class SyncPager(AdapterPager):
+
+    length_unset = object()
+
+    def __init__(self, *args, **kwargs):
+        super(SyncPager, self).__init__(*args, **kwargs)
+        self.length = self.length_unset
+
+    def load_first(self):
+        self.first = self.getter(*self.path, **self.kwargs)
+        self.length = self.first.meta.get('total_count')
+
+    def __len__(self):
+        if self.length is self.length_unset:
+            self.load_first()
+        return self.length
+
+    def __iter__(self):
+        if self.length is self.length_unset:
+            self.load_first()
+        while self.first:
+            yield self.first.pop(0)
+        page = self.first
+        while page.meta['next']:
+            page = self.getter(urn=page.meta['next'])
+            for x in page:
+                yield x
+
+
 class AsyncPager(object):
 
     max_overflow = 1000
 
-    def __init__(self, getter=None, path=None, kwargs=None):
+    def __init__(self, *args, **kwargs):
+        super(AsyncPager, self).__init__(*args, **kwargs)
         self.mark = 0
         self.active = None
         self.waiting = collections.deque()
-        self.getter = getter
-        self.path = path
-        self.kwargs = kwargs
         self.stop = False
         self.next_page = None
 
