@@ -15,7 +15,7 @@ def long_desc():
 
 setup(
     name='syndicate',
-    version='1.3.0',
+    version='1.4.0',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',

@@ -50,7 +50,8 @@ class Service(object):
 
     def __init__(self, uri=None, urn='', auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
-                 async=False, adapter=None, request_timeout=None):
+                 async=False, adapter=None, adapter_config=None,
+                 request_timeout=None):
         if not uri:
             raise TypeError("Required: uri")
         self.async = async
@@ -67,10 +68,12 @@ class Service(object):
         else:
             self.serializer = m_data.serializers[serializer]
         if adapter is None:
+            if adapter_config is None:
+                adapter_config = {}
             if async:
-                adapter = m_async.AsyncAdapter()
+                adapter = m_async.AsyncAdapter(config=adapter_config)
             else:
-                adapter = m_sync.SyncAdapter()
+                adapter = m_sync.SyncAdapter(config=adapter_config)
         self.bind_adapter(adapter)
 
     def bind_adapter(self, adapter):
