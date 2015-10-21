@@ -17,14 +17,13 @@ except ImportError:
 
 class AsyncAdapter(base.AdapterBase):
 
-    def __init__(self, *args, **kwargs):
-        config = kwargs.pop('config', {})
-        self.client = httpclient.AsyncHTTPClient(**config)
+    def __init__(self, config=None):
+        self.client = httpclient.AsyncHTTPClient(**(config or {}))
         self.headers = {}
         self.cookies = {}
         self.request_timeout = None
         self.connect_timeout = None
-        super(AsyncAdapter, self).__init__(*args, **kwargs)
+        super(AsyncAdapter, self).__init__()
 
     def set_header(self, header, value):
         self.headers[header] = value
@@ -47,15 +46,19 @@ class AsyncAdapter(base.AdapterBase):
             data = self.serializer.encode(data)
         if query:
             url = '%s?%s' % (url, urlencode(query, doseq=True))
-        timeout = self.request_timeout if timeout is None else timeout
+        if timeout is not None:
+            request_timeout = connect_timeout = timeout
+        else:
+            request_timeout = self.request_timeout
+            connect_timeout = self.connect_timeout
         headers = self.headers.copy()
         if self.cookies:
             headers['Cookie'] = '; '.join('%s=%s' % (x)
                                           for x in self.cookies.items())
         request = httpclient.HTTPRequest(url, method=method.upper(),
                                          body=data, headers=headers,
-                                         request_timeout=timeout,
-                                         connect_timeout=self.connect_timeout)
+                                         request_timeout=request_timeout,
+                                         connect_timeout=connect_timeout)
         start = lambda f: self.start_request(f, request, user_result)
         self.authenticate(request).add_done_callback(start)
         return user_result

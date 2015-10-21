@@ -51,7 +51,7 @@ class Service(object):
     def __init__(self, uri=None, urn='', auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
                  async=False, adapter=None, adapter_config=None,
-                 request_timeout=None):
+                 request_timeout=None, connect_timeout=None):
         if not uri:
             raise TypeError("Required: uri")
         self.async = async
@@ -61,6 +61,7 @@ class Service(object):
         self.uri = uri
         self.urn = urn
         self.request_timeout = request_timeout
+        self.connect_timeout = connect_timeout
         self.data_getter = data_getter or self.default_data_getter
         self.meta_getter = meta_getter or self.default_meta_getter
         if hasattr(serializer, 'mime'):
@@ -80,6 +81,7 @@ class Service(object):
         adapter.set_header('accept', self.serializer.mime)
         adapter.set_header('content-type', self.serializer.mime)
         adapter.request_timeout = self.request_timeout
+        adapter.connect_timeout = self.connect_timeout
         adapter.ingress_filter = self.ingress_filter
         adapter.serializer = self.serializer
         adapter.auth = self.auth
@@ -167,30 +169,35 @@ class SyncPager(AdapterPager):
 
     def __init__(self, *args, **kwargs):
         super(SyncPager, self).__init__(*args, **kwargs)
-        self.length = self.length_unset
-
-    def load_first(self):
-        self.first = self.getter(*self.path, **self.kwargs)
-        self.length = self.first.meta.get('total_count')
-
-    def __len__(self):
-        if self.length is self.length_unset:
-            self.load_first()
-        return self.length
+        self.page = None
 
     def __iter__(self):
-        if self.length is self.length_unset:
+        return self
+
+    def load_first(self):
+        self.page = self.getter(*self.path, **self.kwargs)
+
+    def load_next(self):
+        if not self.page.meta['next']:
+            raise StopIteration()
+        self.page = self.getter(urn=self.page.meta['next'])
+
+    def __len__(self):
+        if self.page is None:
             self.load_first()
-        while self.first:
-            yield self.first.pop(0)
-        page = self.first
-        while page.meta['next']:
-            page = self.getter(urn=page.meta['next'])
-            for x in page:
-                yield x
+        return self.page.meta['total_count']
+
+    def __next__(self):
+        if self.page is None:
+            self.load_first()
+        if not self.page:
+            self.load_next()
+        return self.page.pop(0)
+
+    next = __next__
 
 
-class AsyncPager(object):
+class AsyncPager(AdapterPager):
 
     max_overflow = 1000
 

@@ -11,11 +11,11 @@ from syndicate.adapters import base
 
 class SyncAdapter(base.AdapterBase):
 
-    def __init__(self, *args, **kwargs):
-        config = kwargs.pop('config', {})
-        self.session = requests.Session(**config)
+    def __init__(self, config=None):
+        self.session = requests.Session(**(config or {}))
         self.request_timeout = None
-        super(SyncAdapter, self).__init__(*args, **kwargs)
+        self.connect_timeout = None
+        super(SyncAdapter, self).__init__()
 
     def set_header(self, header, value):
         self.session.headers[header] = value
@@ -41,7 +41,8 @@ class SyncAdapter(base.AdapterBase):
                 timeout=None):
         if data is not None:
             data = self.serializer.encode(data)
-        timeout = self.request_timeout if timeout is None else timeout
+        if timeout is None:
+            timeout = self.connect_timeout, self.request_timeout
         resp = self.session.request(method, url, data=data, params=query,
                                     timeout=timeout)
         content = None
