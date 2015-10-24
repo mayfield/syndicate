@@ -3,9 +3,19 @@
 
 ## [Unreleased] - unreleased
 
+
+## [1.4.0] - 2015-10-24
+### Changed
+- The sync `get_pager` returns a sized iterator.
+- Connect and request timeout can be set from Service init.
+
+### Added
+- Made it possible to pass configuration to Adapter construction.
+
+
 ## [1.3.0] - 2015-10-19
 ### Added
-- Adapter.{set_cookie, get_cookie and get_header} methods for consistent
+- `Adapter.{set_cookie, get_cookie and get_header}` methods for consistent
   cookie interfaces regardless of adapter type.
 
 
@@ -18,7 +28,7 @@
 ### Changed
 - xml serializer support
 - multi header support of HeaderAuth
-- Service(trailing_slash=True) will always append a slash
+- `Service(trailing_slash=True)` will always append a slash
 
 ### Fixed
 - urn-less support for APIs that don't have a fixed urn
@@ -29,7 +39,8 @@
 - First stable release
 
 
-[unreleased]: https://github.com/mayfield/syndicate/compare/v1.3.0...HEAD
+[unreleased]: https://github.com/mayfield/syndicate/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/mayfield/syndicate/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/mayfield/syndicate/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/mayfield/syndicate/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/mayfield/syndicate/compare/v1.0.0...v1.1.0
