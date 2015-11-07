@@ -6,17 +6,17 @@ This code requires Python 3.4 or newer.
 import aiohttp
 import asyncio
 import collections
-import functools
 import json
 from syndicate.adapters import base
 
 
 class AsyncAdapter(base.AdapterBase):
 
-    def __init__(self, session_config=None, connector_config=None, **config):
+    def __init__(self, loop=None, session_config=None, connector_config=None,
+                 **config):
         super().__init__(**config)
         c = aiohttp.TCPConnector(conn_timeout=self.connect_timeout,
-                                 **(connector_config or {}))
+                                 loop=loop, **(connector_config or {}))
         self.session = aiohttp.ClientSession(connector=c,
                                              **(session_config or {}))
         self.headers = {}
@@ -44,6 +44,8 @@ class AsyncAdapter(base.AdapterBase):
         yield from self.authenticate()
         r = self.session.request(method, url, data=data, headers=self.headers,
                                  params=query)
+        if timeout is None:
+            timeout = self.request_timeout
         result = yield from asyncio.wait_for(r, timeout)
         body = yield from result.read()
         content = body and self.serializer.decode(body.decode())
