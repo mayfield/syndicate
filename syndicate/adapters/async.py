@@ -1,29 +1,25 @@
 """
-Asyncronous adapter using the 'tornado' engine.
+Asyncronous adapter using the `asyncio` and `aiohttp`.
+This code requires Python 3.4 or newer.
 """
 
-from __future__ import print_function, division
-
+import aiohttp
+import asyncio
+import collections
 import functools
 import json
-import sys
 from syndicate.adapters import base
-from tornado import httpclient, concurrent, gen
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
 
 
 class AsyncAdapter(base.AdapterBase):
 
-    def __init__(self, config=None):
-        self.client = httpclient.AsyncHTTPClient(**(config or {}))
+    def __init__(self, session_config=None, connector_config=None, **config):
+        super().__init__(**config)
+        c = aiohttp.TCPConnector(conn_timeout=self.connect_timeout,
+                                 **(connector_config or {}))
+        self.session = aiohttp.ClientSession(connector=c,
+                                             **(session_config or {}))
         self.headers = {}
-        self.cookies = {}
-        self.request_timeout = None
-        self.connect_timeout = None
-        super(AsyncAdapter, self).__init__()
 
     def set_header(self, header, value):
         self.headers[header] = value
@@ -32,79 +28,36 @@ class AsyncAdapter(base.AdapterBase):
         return self.headers[header]
 
     def set_cookie(self, cookie, value):
-        self.cookies[cookie] = value
+        self.session.cookies[cookie] = value
 
     def get_cookie(self, cookie):
-        return self.cookies[cookie]
+        return self.session.cookies[cookie].value
 
+    def get_pager(self, *args, **kwargs):
+        return AsyncPager(*args, **kwargs)
+
+    @asyncio.coroutine
     def request(self, method, url, data=None, query=None, callback=None,
                 timeout=None):
-        user_result = concurrent.TracebackFuture()
-        if callback is not None:
-            user_result.add_done_callback(callback)
         if data is not None:
             data = self.serializer.encode(data)
-        if query:
-            url = '%s?%s' % (url, urlencode(query, doseq=True))
-        if timeout is not None:
-            request_timeout = connect_timeout = timeout
-        else:
-            request_timeout = self.request_timeout
-            connect_timeout = self.connect_timeout
-        headers = self.headers.copy()
-        if self.cookies:
-            headers['Cookie'] = '; '.join('%s=%s' % (x)
-                                          for x in self.cookies.items())
-        request = httpclient.HTTPRequest(url, method=method.upper(),
-                                         body=data, headers=headers,
-                                         request_timeout=request_timeout,
-                                         connect_timeout=connect_timeout)
-        start = lambda f: self.start_request(f, request, user_result)
-        self.authenticate(request).add_done_callback(start)
-        return user_result
+        yield from self.authenticate()
+        r = self.session.request(method, url, data=data, headers=self.headers,
+                                 params=query)
+        result = yield from asyncio.wait_for(r, timeout)
+        body = yield from result.read()
+        content = body and self.serializer.decode(body.decode())
+        resp = base.Response(http_code=result.status, headers=result.headers,
+                             content=content, error=None, extra=result)
+        final_resp = self.ingress_filter(resp)
+        if callback is not None:
+            callback(final_resp)
+        return final_resp
 
-    def authenticate(self, request):
-        f = None
+    @asyncio.coroutine
+    def authenticate(self):
         if callable(self.auth):
-            f = self.auth(request)
-        elif self.auth is not None:
-            request.auth_username, request.auth_password = self.auth
-        if f is None:
-            # TODO: Replace with gen.maybe_future in tornado 3.3
-            f = concurrent.Future()
-            f.set_result(None)
-        return f
-
-    def start_request(self, auth_result, request, user_result):
-        if auth_result.exception():
-            concurrent.chain_future(auth_result, user_result)
-            return
-        try:
-            f = self.client.fetch(request)
-        except Exception:
-            user_result.set_exc_info(sys.exc_info())
-        else:
-            cb = functools.partial(self.on_request_done, user_result)
-            f.add_done_callback(cb)
-
-    def on_request_done(self, user_result, fetch_result):
-        """ Finally parse the result and run the user's callback. """
-        if fetch_result.exception():
-            concurrent.chain_future(fetch_result, user_result)
-        else:
-            native_resp = fetch_result.result()
-            content = None
-            try:
-                if native_resp.body and len(native_resp.body):
-                    content = self.serializer.decode(native_resp.body.decode())
-            except Exception:
-                user_result.set_exc_info(sys.exc_info())
-            else:
-                resp = base.Response(http_code=native_resp.code,
-                                     headers=native_resp.headers,
-                                     content=content, error=None,
-                                     extra=native_resp)
-                user_result.set_result(self.ingress_filter(resp))
+            yield from self.auth()
 
 
 class LoginAuth(object):
@@ -124,19 +77,19 @@ class LoginAuth(object):
             headers.update(kwargs['headers'])
         kwargs['headers'] = headers
         if 'data' in kwargs:
-            kwargs['body'] = self.serializer(kwargs.pop('data'))
+            kwargs['data'] = self.serializer(kwargs.pop('data'))
         self.url = url
         self.method = method
         self.req_kwargs = kwargs
         self.login = None
 
-    @gen.coroutine
+    @asyncio.coroutine
     def __call__(self, request):
         if not self.login:
-            http = httpclient.AsyncHTTPClient()
-            self.login = http.fetch(self.url, method=self.method.upper(),
-                                    **self.req_kwargs)
-        response = yield self.login
+            with aiohttp.ClientSession() as http:
+                self.login = http.request(self.method, self.url,
+                                          **self.req_kwargs)
+        response = yield from self.login
         self.check_login_response()
         request.headers['cookie'] = response.headers['set-cookie']
 
@@ -161,3 +114,64 @@ class HeaderAuth(object):
 
     def __call__(self, request):
         request.headers.update(self.headers)
+
+
+class AsyncPager(base.AdapterPager):
+
+    max_overflow = 1000
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mark = 0
+        self.active = None
+        self.waiting = collections.deque()
+        self.stop = False
+        self.next_page = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        item = asyncio.Future()
+        self.queue_next(item)
+        return item
+
+    next = __next__
+
+    def queue_next_page(self):
+        if self.next_page:
+            self.active = self.getter(urn=self.next_page)
+        else:
+            self.active = self.getter(*self.path, **self.kwargs)
+        self.active.add_done_callback(self.on_next_page)
+
+    def queue_next(self, item):
+        if len(self.waiting) >= self.max_overflow:
+            raise OverflowError('max overflow exceeded')
+        if self.active:
+            if self.active.done():
+                if self.active.result():
+                    item.set_result(self.active.result().pop(0))
+                elif self.stop:
+                    raise StopIteration()
+                else:
+                    self.waiting.append(item)
+                    self.queue_next_page()
+            else:
+                self.waiting.append(item)
+        else:
+            self.waiting.append(item)
+            self.queue_next_page()
+
+    def on_next_page(self, page):
+        res = page.result()
+        self.next_page = res.meta['next']
+        self.stop = not self.next_page
+        while self.waiting and res:
+            self.waiting.popleft().set_result(res.pop(0))
+        if self.waiting:
+            if self.stop:
+                while self.waiting:
+                    self.waiting.popleft().set_exception(StopIteration())
+            else:
+                self.queue_next_page()

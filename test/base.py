@@ -2,8 +2,6 @@
 Sanity tests for the syndicate library.
 """
 
-from __future__ import print_function, division
-
 import datetime
 import syndicate
 import syndicate.adapters.async

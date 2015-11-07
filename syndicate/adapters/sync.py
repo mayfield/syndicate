@@ -2,8 +2,6 @@
 Syncronous adapter based on the 'requests' library.
 """
 
-from __future__ import print_function, division
-
 import json
 import requests
 from syndicate.adapters import base
@@ -11,11 +9,9 @@ from syndicate.adapters import base
 
 class SyncAdapter(base.AdapterBase):
 
-    def __init__(self, config=None):
-        self.session = requests.Session(**(config or {}))
-        self.request_timeout = None
-        self.connect_timeout = None
-        super(SyncAdapter, self).__init__()
+    def __init__(self, session_config=None, **config):
+        self.session = requests.Session(**(session_config or {}))
+        super().__init__(**config)
 
     def set_header(self, header, value):
         self.session.headers[header] = value
@@ -28,6 +24,9 @@ class SyncAdapter(base.AdapterBase):
 
     def get_cookie(self, cookie):
         return self.session.cookies.get_dict()[cookie]
+
+    def get_pager(self, *args, **kwargs):
+        return SyncPager(*args, **kwargs)
 
     @property
     def auth(self):
@@ -115,3 +114,37 @@ class LoginAuth(requests.auth.AuthBase):
 
     def serializer(self, data):
         return json.dumps(data)
+
+
+class SyncPager(base.AdapterPager):
+
+    length_unset = object()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.page = None
+
+    def __iter__(self):
+        return self
+
+    def load_first(self):
+        self.page = self.getter(*self.path, **self.kwargs)
+
+    def load_next(self):
+        if not self.page.meta['next']:
+            raise StopIteration()
+        self.page = self.getter(urn=self.page.meta['next'])
+
+    def __len__(self):
+        if self.page is None:
+            self.load_first()
+        return self.page.meta['total_count']
+
+    def __next__(self):
+        if self.page is None:
+            self.load_first()
+        if not self.page:
+            self.load_next()
+        return self.page.pop(0)
+
+    next = __next__

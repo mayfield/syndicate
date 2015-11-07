@@ -2,8 +2,6 @@
 Serialize data to/from foreign data types into python.
 '''
 
-from __future__ import print_function
-
 import collections
 import datetime
 import dateutil.parser
@@ -29,7 +27,7 @@ class NormalJSONEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         else:
-            return super(NormalJSONEncoder, self).default(obj)
+            return super().default(obj)
 
 
 class NormalJSONDecoder(json.JSONDecoder):
@@ -38,7 +36,7 @@ class NormalJSONDecoder(json.JSONDecoder):
     strict_iso_match = re.compile('\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}\:\d{2}.*)?$')
 
     def __init__(self):
-        super(NormalJSONDecoder, self).__init__(object_hook=self.parse_object)
+        super().__init__(object_hook=self.parse_object)
 
     def parse_object(self, data):
         """ Look for datetime looking strings. """

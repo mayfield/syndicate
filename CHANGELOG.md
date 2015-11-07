@@ -2,6 +2,8 @@
 
 
 ## [Unreleased] - unreleased
+### Changed
+- Replace tornado backend with asyncio, aiohttp (requires python3.4+)
 
 
 ## [1.4.0] - 2015-10-24

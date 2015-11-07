@@ -15,7 +15,7 @@ def long_desc():
 
 setup(
     name='syndicate',
-    version='1.4.0',
+    version='2',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
@@ -26,7 +26,7 @@ setup(
     install_requires=[
         'requests',
         'python-dateutil',
-        'tornado',
+        'aiohttp',
     ],
     test_suite='test',
     classifiers=[
@@ -35,6 +35,8 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Software Development :: Libraries',
     ]
 )
