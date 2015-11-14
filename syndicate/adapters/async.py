@@ -57,11 +57,11 @@ class AsyncAdapter(base.AdapterBase):
                 timeout=None):
         if data is not None:
             data = self.serializer.encode(data)
+        if timeout is None:
+            timeout = self.request_timeout
         yield from self.authenticate()
         r = self.session.request(method, url, data=data, headers=self.headers,
                                  params=query)
-        if timeout is None:
-            timeout = self.request_timeout
         result = yield from asyncio.wait_for(r, timeout)
         body = yield from result.read()
         content = body and self.serializer.decode(body.decode())
