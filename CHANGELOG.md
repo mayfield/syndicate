@@ -2,8 +2,12 @@
 
 
 ## [Unreleased] - unreleased
+
+
+## [2] - 2015-11-15
 ### Changed
-- Replace tornado backend with asyncio, aiohttp (requires python3.4+)
+- Replace tornado backend with asyncio/aiohttp.
+- Python 3.4+ is required now. (soon to be 3.5!)
 
 
 ## [1.4.0] - 2015-10-24
@@ -42,6 +46,7 @@
 
 
 [unreleased]: https://github.com/mayfield/syndicate/compare/v1.4.0...HEAD
+[2]: https://github.com/mayfield/syndicate/compare/v1.4.0...v2
 [1.4.0]: https://github.com/mayfield/syndicate/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/mayfield/syndicate/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/mayfield/syndicate/compare/v1.1.0...v1.2.0
