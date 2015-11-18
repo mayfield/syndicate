@@ -31,6 +31,9 @@ class AsyncAdapter(base.AdapterBase):
     def __init__(self, loop=None, session_config=None, connector_config=None,
                  **config):
         super().__init__(**config)
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        self.loop = loop
         c = aiohttp.TCPConnector(conn_timeout=self.connect_timeout,
                                  loop=loop, **(connector_config or {}))
         self.session = aiohttp.ClientSession(connector=c,
@@ -62,7 +65,7 @@ class AsyncAdapter(base.AdapterBase):
         yield from self.authenticate()
         r = self.session.request(method, url, data=data, headers=self.headers,
                                  params=query)
-        result = yield from asyncio.wait_for(r, timeout)
+        result = yield from asyncio.wait_for(r, timeout, loop=self.loop)
         body = yield from result.read()
         content = body and self.serializer.decode(body.decode())
         resp = base.Response(http_code=result.status, headers=result.headers,
