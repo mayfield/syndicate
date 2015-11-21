@@ -80,6 +80,9 @@ class AsyncAdapter(base.AdapterBase):
         if callable(self.auth):
             yield from self.auth()
 
+    def close(self):
+        self.session.close()
+
 
 class LoginAuth(object):
     """ Auth where you need to perform an arbitrary "login" to get a cookie.

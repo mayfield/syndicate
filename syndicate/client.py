@@ -127,3 +127,6 @@ class Service(object):
         path = list(path_and_data)
         data = path.pop(-1)
         return self.do('patch', path, data=data, **kwargs)
+
+    def close(self):
+        self.adapter.close()

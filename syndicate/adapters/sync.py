@@ -60,6 +60,9 @@ class SyncAdapter(base.AdapterBase):
             callback(data)
         return data
 
+    def close(self):
+        pass
+
 
 class HeaderAuth(requests.auth.AuthBase):
     """ A simple header based auth.  Instantiate this with header name and
