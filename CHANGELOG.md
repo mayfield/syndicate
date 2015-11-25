@@ -2,6 +2,8 @@
 
 
 ## [Unreleased] - unreleased
+### Added
+- `Service.close` method for freeing resources.
 
 
 ## [2] - 2015-11-15

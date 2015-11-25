@@ -49,6 +49,7 @@ class Service(object):
                  async=False, **adapter_config):
         if not uri:
             raise TypeError("Required: uri")
+        self.closed = False
         self.async = async
         self.auth = auth
         self.filters = []
@@ -129,4 +130,9 @@ class Service(object):
         return self.do('patch', path, data=data, **kwargs)
 
     def close(self):
-        self.adapter.close()
+        if self.closed:
+            return
+        if self.adapter is not None:
+            self.adapter.close()
+            self.adapter = None
+        self.closed = True
