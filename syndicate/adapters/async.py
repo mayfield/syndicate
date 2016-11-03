@@ -47,10 +47,13 @@ class AsyncAdapter(base.AdapterBase):
         return self.headers[header]
 
     def set_cookie(self, cookie, value):
-        self.session.cookies[cookie] = value
+        self.session.cookie_jar.update_cookies({cookie: value})
 
     def get_cookie(self, cookie):
-        return self.session.cookies[cookie].value
+        for x in self.session.cookie_jar:
+            if x.key == cookie:
+                return x.value
+        raise KeyError(cookie)
 
     def get_pager(self, *args, **kwargs):
         return AsyncPager(*args, **kwargs)

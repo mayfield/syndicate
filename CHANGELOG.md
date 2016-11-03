@@ -3,6 +3,10 @@
 
 ## [Unreleased] - unreleased
 
+## [2.1.1] - 2016-11-03
+### Fixed
+- Updated cookie handling for new versions of aiohttp.
+
 
 ## [2.1] - 2015-12-04
 ### Added
@@ -50,7 +54,8 @@
 - First stable release
 
 
-[unreleased]: https://github.com/mayfield/syndicate/compare/v2.1...HEAD
+[unreleased]: https://github.com/mayfield/syndicate/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/mayfield/syndicate/compare/v2.1...v2.1.1
 [2.1]: https://github.com/mayfield/syndicate/compare/v2...v2.1
 [2]: https://github.com/mayfield/syndicate/compare/v1.4.0...v2
 [1.4.0]: https://github.com/mayfield/syndicate/compare/v1.3.0...v1.4.0

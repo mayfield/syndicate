@@ -26,7 +26,7 @@ setup(
     install_requires=[
         'requests',
         'python-dateutil',
-        'aiohttp',
+        'aiohttp>=1.0.5',
     ],
     test_suite='test',
     classifiers=[
