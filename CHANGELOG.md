@@ -3,6 +3,12 @@
 
 ## [Unreleased] - unreleased
 
+
+## [2.1.2] - 2016-11-05
+### Fixed
+- Fix for query args in new version of yarl (from aiohttp).
+
+
 ## [2.1.1] - 2016-11-03
 ### Fixed
 - Updated cookie handling for new versions of aiohttp.
@@ -54,7 +60,8 @@
 - First stable release
 
 
-[unreleased]: https://github.com/mayfield/syndicate/compare/v2.1.1...HEAD
+[unreleased]: https://github.com/mayfield/syndicate/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/mayfield/syndicate/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/mayfield/syndicate/compare/v2.1...v2.1.1
 [2.1]: https://github.com/mayfield/syndicate/compare/v2...v2.1
 [2]: https://github.com/mayfield/syndicate/compare/v1.4.0...v2
