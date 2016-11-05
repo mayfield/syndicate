@@ -2,6 +2,7 @@
 Client for REST APIs.
 '''
 
+import collections
 import re
 from syndicate import data as m_data
 from syndicate.adapters import sync as m_sync, async as m_async
@@ -96,8 +97,10 @@ class Service(object):
             if not parts[0].endswith('/'):
                 parts[0] += '/'
                 url = ''.join(parts)
+        norm_query = collections.OrderedDict(sorted((k, str(v))
+                                                    for k, v in query.items()))
         return self.adapter.request(method, url, callback=callback, data=data,
-                                    query=query, timeout=timeout)
+                                    query=norm_query, timeout=timeout)
 
     def get(self, *path, **kwargs):
         return self.do('get', path, **kwargs)
