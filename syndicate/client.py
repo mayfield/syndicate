@@ -97,10 +97,8 @@ class Service(object):
             if not parts[0].endswith('/'):
                 parts[0] += '/'
                 url = ''.join(parts)
-        norm_query = collections.OrderedDict(sorted((k, str(v))
-                                                    for k, v in query.items()))
         return self.adapter.request(method, url, callback=callback, data=data,
-                                    query=norm_query, timeout=timeout)
+                                    query=query, timeout=timeout)
 
     def get(self, *path, **kwargs):
         return self.do('get', path, **kwargs)

@@ -66,8 +66,18 @@ class AsyncAdapter(base.AdapterBase):
         if timeout is None:
             timeout = self.request_timeout
         yield from self.authenticate()
+        params = []
+        for key, values in query.items():
+            if not isinstance(values, str):
+                try:
+                    params.extend((key, str(val)) for val in values)
+                except TypeError:
+                    pass
+                else:
+                    continue
+            params.append((key, str(values)))
         r = self.session.request(method, url, data=data, headers=self.headers,
-                                 params=query)
+                                 params=params)
         result = yield from asyncio.wait_for(r, timeout, loop=self.loop)
         body = yield from result.read()
         content = body and self.serializer.decode(body.decode())
