@@ -15,7 +15,7 @@ def long_desc():
 
 setup(
     name='syndicate',
-    version='2.1.3',
+    version='2.2.0',
     description='A wrapper for REST APIs',
     author='Justin Mayfield',
     author_email='tooker@gmail.com',
@@ -37,6 +37,8 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Software Development :: Libraries',
     ]
 )
