@@ -4,8 +4,8 @@ Sanity tests for the syndicate library.
 
 import datetime
 import syndicate
-import syndicate.adapters.async
-import syndicate.adapters.sync
+import syndicate.adapters.async as async_adapters
+import syndicate.adapters.sync as sync_adapters
 import syndicate.data
 import unittest
 
@@ -32,9 +32,6 @@ class BaseTest(unittest.TestCase):
 
 class AuthTests(unittest.TestCase):
 
-    sync = syndicate.adapters.sync
-    async = syndicate.adapters.async
-
     def request(self):
         class Request(object): pass
         r = Request()
@@ -42,7 +39,7 @@ class AuthTests(unittest.TestCase):
         return r
 
     def test_header_auth_single(self):
-        for Auth in (self.sync.HeaderAuth, self.async.HeaderAuth):
+        for Auth in (sync_adapters.HeaderAuth, async_adapters.HeaderAuth):
             request = self.request()
             auth = Auth("foo", "bar")
             auth(request)
@@ -52,7 +49,7 @@ class AuthTests(unittest.TestCase):
             self.assertEqual(request.headers, {'foo': 'bar', 'bar': 'foo'})
 
     def test_header_auth_multi(self):
-        for Auth in (self.sync.HeaderAuth, self.async.HeaderAuth):
+        for Auth in (sync_adapters.HeaderAuth, async_adapters.HeaderAuth):
             request = self.request()
             auth = Auth({"foo": "bar"})
             auth(request)

@@ -46,14 +46,14 @@ class Service(object):
 
     def __init__(self, uri=None, urn='', auth=None, serializer='json',
                  data_getter=None, meta_getter=None, trailing_slash=True,
-                 async_=False, **adapter_config):
+                 aio=False, **adapter_config):
         if not uri:
             raise TypeError("Required: uri")
         if 'async' in adapter_config:
             raise TypeError("Invalid argument: `async` is now reserved; "
-                            "Use `async_` instead")
+                            "Use `aio` instead")
         self.closed = False
-        self.async_ = async_
+        self.aio = aio
         self.auth = auth
         self.filters = []
         self.trailing_slash = trailing_slash
@@ -67,14 +67,14 @@ class Service(object):
             self.serializer = m_data.serializers[serializer]
         self.adapter = self.make_adapter(ingress_filter=self.ingress_filter,
                                          serializer=self.serializer,
-                                         auth=self.auth, async_=async_,
+                                         auth=self.auth, aio=aio,
                                          **adapter_config)
 
-    def make_adapter(self, async_=False, **config):
+    def make_adapter(self, aio=False, **config):
         if 'async' in config:
             raise TypeError("Invalid argument: `async` is now reserved; "
-                            "Use `async_` instead")
-        Adapter = m_async.AsyncAdapter if async_ else m_sync.SyncAdapter
+                            "Use `aio` instead")
+        Adapter = m_async.AsyncAdapter if aio else m_sync.SyncAdapter
         a = Adapter(**config)
         a.set_header('accept', self.serializer.mime)
         a.set_header('content-type', self.serializer.mime)
