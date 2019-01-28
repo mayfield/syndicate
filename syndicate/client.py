@@ -4,7 +4,7 @@ Client for REST APIs.
 
 import re
 from syndicate import data as m_data
-from syndicate.adapters import sync as m_sync, async as m_async
+from syndicate.adapters import sync as m_sync, async_impl as m_async
 
 
 class ServiceError(Exception):
