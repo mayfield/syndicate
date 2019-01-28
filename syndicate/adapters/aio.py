@@ -26,7 +26,7 @@ if platform.python_version() <= '3.5.0':
     monkey_patch_issue_25593()
 
 
-class AsyncAdapter(base.AdapterBase):
+class AioAdapter(base.AdapterBase):
 
     def __init__(self, loop=None, session_config=None, connector_config=None,
                  **config):

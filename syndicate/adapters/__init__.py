@@ -1,6 +1,6 @@
 
 __all__ = (
-    'sync',
-    'async_impl',
+    'requests',
+    'aio',
     'base'
 )

@@ -3,8 +3,9 @@ Client for REST APIs.
 '''
 
 import re
-from syndicate import data as m_data
-from syndicate.adapters import sync as m_sync, async_impl as m_async
+from . import data as m_data
+from .adapters import aio as aio_adapter
+from .adapters import requests as requests_adapter
 
 
 class ServiceError(Exception):
@@ -15,6 +16,7 @@ class ResponseError(ServiceError):
 
     def __init__(self, response):
         self.response = response
+        super().__init__()
 
     def __str__(self):
         return '%s(%s)' % (type(self).__name__, self.response)
@@ -74,7 +76,8 @@ class Service(object):
         if 'async' in config:
             raise TypeError("Invalid argument: `async` is now reserved; "
                             "Use `aio` instead")
-        Adapter = m_async.AsyncAdapter if aio else m_sync.SyncAdapter
+        Adapter = aio_adapter.AioAdapter if aio else \
+                  requests_adapter.RequestsAdapter
         a = Adapter(**config)
         a.set_header('accept', self.serializer.mime)
         a.set_header('content-type', self.serializer.mime)

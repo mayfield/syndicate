@@ -7,7 +7,7 @@ import requests
 from syndicate.adapters import base
 
 
-class SyncAdapter(base.AdapterBase):
+class RequestsAdapter(base.AdapterBase):
 
     def __init__(self, session_config=None, **config):
         self.session = requests.Session(**(session_config or {}))
@@ -46,7 +46,7 @@ class SyncAdapter(base.AdapterBase):
                                     timeout=timeout)
         content = None
         try:
-            if resp.content and len(resp.content):
+            if resp.content:
                 content = self.serializer.decode(resp.content.decode())
         except Exception as e:
             error = e

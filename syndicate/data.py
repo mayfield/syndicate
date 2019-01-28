@@ -26,14 +26,13 @@ class NormalJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
-        else:
-            return super().default(obj)
+        return super().default(obj)
 
 
 class NormalJSONDecoder(json.JSONDecoder):
     """ Normal == iso datatime. """
 
-    strict_iso_match = re.compile('\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}\:\d{2}.*)?$')
+    strict_iso_match = re.compile(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}\:\d{2}.*)?$')
 
     def __init__(self):
         super().__init__(object_hook=self.parse_object)
