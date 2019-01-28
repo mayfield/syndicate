@@ -1,6 +1,7 @@
 # Change Log
 
-## [2.3] - 2018-01-28
+
+## [2.3.0] - 2018-01-28
 ### Fixed
 - Python 3.7 support
 
@@ -64,7 +65,7 @@
 - First stable release
 
 
-[2.3]: https://github.com/mayfield/syndicate/compare/v2.1.2...v2.3
+[2.3.0]: https://github.com/mayfield/syndicate/compare/v2.1.2...v2.3.0
 [2.1.2]: https://github.com/mayfield/syndicate/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/mayfield/syndicate/compare/v2.1...v2.1.1
 [2.1]: https://github.com/mayfield/syndicate/compare/v2...v2.1
