@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.0] - 2018-01-28
+### Changed
+- Upgrade to modern aiohttp adapter
+
 
 ## [2.3.0] - 2018-01-28
 ### Fixed
@@ -65,6 +69,7 @@
 - First stable release
 
 
+[3.0.0]: https://github.com/mayfield/syndicate/compare/v2.3.0...v3.0.0
 [2.3.0]: https://github.com/mayfield/syndicate/compare/v2.1.2...v2.3.0
 [2.1.2]: https://github.com/mayfield/syndicate/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/mayfield/syndicate/compare/v2.1...v2.1.1

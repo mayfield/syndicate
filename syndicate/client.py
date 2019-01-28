@@ -54,7 +54,7 @@ class Service(object):
         if 'async' in adapter_config:
             raise TypeError("Invalid argument: `async` is now reserved; "
                             "Use `aio` instead")
-        self.closed = False
+        self.closing = False
         self.aio = aio
         self.auth = auth
         self.filters = []
@@ -139,9 +139,9 @@ class Service(object):
         return self.do('patch', path, data=data, **kwargs)
 
     def close(self):
-        if self.closed:
+        if self.closing or self.adapter is None:
             return
-        if self.adapter is not None:
-            self.adapter.close()
-            self.adapter = None
-        self.closed = True
+        self.closing = True
+        adapter = self.adatper
+        self.adapter = None
+        return adapter.close()

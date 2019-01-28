@@ -34,9 +34,9 @@ class AioAdapter(base.AdapterBase):
         if loop is None:
             loop = asyncio.get_event_loop()
         self.loop = loop
-        c = aiohttp.TCPConnector(conn_timeout=self.connect_timeout,
-                                 loop=loop, **(connector_config or {}))
-        self.session = aiohttp.ClientSession(connector=c,
+        c = aiohttp.TCPConnector(loop=loop, **(connector_config or {}))
+        timeout = aiohttp.ClientTimeout(connect=self.connect_timeout)
+        self.session = aiohttp.ClientSession(connector=c, timeout=timeout,
                                              **(session_config or {}))
         self.headers = {}
 
@@ -58,14 +58,13 @@ class AioAdapter(base.AdapterBase):
     def get_pager(self, *args, **kwargs):
         return AioPager(*args, **kwargs)
 
-    @asyncio.coroutine
-    def request(self, method, url, data=None, query=None, callback=None,
+    async def request(self, method, url, data=None, query=None, callback=None,
                 timeout=None):
         if data is not None:
             data = self.serializer.encode(data)
         if timeout is None:
             timeout = self.request_timeout
-        yield from self.authenticate()
+        await self.authenticate()
         params = []
         for key, values in query.items():
             if not isinstance(values, str):
@@ -78,8 +77,8 @@ class AioAdapter(base.AdapterBase):
             params.append((key, str(values)))
         r = self.session.request(method, url, data=data, headers=self.headers,
                                  params=params)
-        result = yield from asyncio.wait_for(r, timeout, loop=self.loop)
-        body = yield from result.read()
+        result = await asyncio.wait_for(r, timeout, loop=self.loop)
+        body = await result.read()
         content = body and self.serializer.decode(body.decode())
         resp = base.Response(http_code=result.status, headers=result.headers,
                              content=content, error=None, extra=result)
@@ -88,13 +87,12 @@ class AioAdapter(base.AdapterBase):
             callback(final_resp)
         return final_resp
 
-    @asyncio.coroutine
-    def authenticate(self):
+    async def authenticate(self):
         if callable(self.auth):
-            yield from self.auth()
+            await self.auth()
 
-    def close(self):
-        self.session.close()
+    async def close(self):
+        await self.session.close()
 
 
 class LoginAuth(object):
@@ -120,13 +118,12 @@ class LoginAuth(object):
         self.req_kwargs = kwargs
         self.login = None
 
-    @asyncio.coroutine
-    def __call__(self, request):
+    async def __call__(self, request):
         if not self.login:
             with aiohttp.ClientSession() as http:
                 self.login = http.request(self.method, self.url,
                                           **self.req_kwargs)
-        response = yield from self.login
+        response = await self.login
         self.check_login_response()
         request.headers['cookie'] = response.headers['set-cookie']
 
