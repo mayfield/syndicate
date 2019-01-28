@@ -56,7 +56,7 @@ class AioAdapter(base.AdapterBase):
         raise KeyError(cookie)
 
     def get_pager(self, *args, **kwargs):
-        return AsyncPager(*args, **kwargs)
+        return AioPager(*args, **kwargs)
 
     @asyncio.coroutine
     def request(self, method, url, data=None, query=None, callback=None,
@@ -153,7 +153,7 @@ class HeaderAuth(object):
         request.headers.update(self.headers)
 
 
-class AsyncPager(base.AdapterPager):
+class AioPager(base.AdapterPager):
 
     max_overflow = 1000
 
@@ -212,3 +212,5 @@ class AsyncPager(base.AdapterPager):
                     self.waiting.popleft().set_exception(StopIteration())
             else:
                 self.queue_next_page()
+
+pager_class = AioPager  # For public reference

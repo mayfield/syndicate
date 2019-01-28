@@ -26,7 +26,7 @@ class RequestsAdapter(base.AdapterBase):
         return self.session.cookies.get_dict()[cookie]
 
     def get_pager(self, *args, **kwargs):
-        return SyncPager(*args, **kwargs)
+        return RequestsPager(*args, **kwargs)
 
     @property
     def auth(self):
@@ -119,7 +119,7 @@ class LoginAuth(requests.auth.AuthBase):
         return json.dumps(data)
 
 
-class SyncPager(base.AdapterPager):
+class RequestsPager(base.AdapterPager):
 
     length_unset = object()
 
