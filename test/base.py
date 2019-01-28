@@ -4,7 +4,7 @@ Sanity tests for the syndicate library.
 
 import datetime
 import syndicate
-import syndicate.adapters.async as async_adapters
+import syndicate.adapters.async_impl as async_adapters
 import syndicate.adapters.sync as sync_adapters
 import syndicate.data
 import unittest
