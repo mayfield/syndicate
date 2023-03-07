@@ -77,7 +77,7 @@ class AioAdapter(base.AdapterBase):
             params.append((key, str(values)))
         r = self.session.request(method, url, data=data, headers=self.headers,
                                  params=params)
-        result = await asyncio.wait_for(r, timeout, loop=self.loop)
+        result = await asyncio.wait_for(r, timeout)
         body = await result.read()
         content = body and self.serializer.decode(body.decode())
         resp = base.Response(http_code=result.status, headers=result.headers,
